@@ -43,7 +43,7 @@ services:
 
   db:
     build: ./docker/supabase/db
-    image: deathspot-db:17.6.1.136
+    image: deathspot-db:latest
     restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -181,7 +181,7 @@ services:
   # (behind DASHBOARD_USERNAME / DASHBOARD_PASSWORD basic auth).
   api-gw:
     build: ./docker/supabase/api/envoy
-    image: deathspot-api-gw:1.39.1
+    image: deathspot-api-gw:latest
     restart: unless-stopped
     networks:
       default:
