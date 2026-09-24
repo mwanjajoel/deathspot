@@ -38,6 +38,8 @@ The admin panel is at `/admin`. `pnpm setup:env` prints the first admin login.
    ```
 
    Integration tests run against the local Supabase stack (`pnpm supabase:up`).
+
+   [CI](.github/workflows/ci.yml) runs the same checks on every pull request, against a fresh Supabase stack, and builds the docs and the Docker image. Pull requests need a green run to merge into `main`.
 4. **Test on a phone-sized screen.** Most people use Deathspot on a mid-range Android phone over mobile data.
 5. Open a pull request **into `develop`** and fill in the template.
 
