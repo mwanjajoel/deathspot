@@ -1,31 +1,117 @@
-# Deathspot UG
+<div align="center">
 
-**A community-led “Waze for danger” in Uganda.** Anyone can pin a place where people have been attacked or killed, others confirm whether it is still dangerous, volunteer moderators keep the map honest, and everyone can check their route and get warned when they get close.
+# 💀 Deathspot UG
 
-Uganda Police recorded 4,328 murders in 2025, about 11 a day. After Moses Matovu was killed less than two minutes from CID Headquarters in September 2026, [@TonyNatif listed hotspots](https://x.com/TonyNatif/status/2102998432218534245) that need patrols and added, “People will add more spots.” This app gives people a place to do that.
+**A community-led danger map for Uganda. Know where people are being attacked and killed, and avoid those places.**
 
-## Features
+Think *Waze*, but for danger.
 
-**Public map** (mobile-first):
-- Danger pins coloured by severity. They cluster at low zoom, and a heatmap view is also available.
-- **Report in two taps**: drop a pin or use GPS, then pick what happened. No account needed.
-- **Waze-style verification**: voters answer “Still dangerous” or “Not anymore”. Three net confirmations mark a spot *community confirmed*.
-- **Report a problem**: flag a pin that's wrong, a duplicate, abusive, or names a person. Enough flags hide it until a moderator reviews it.
-- **Route check**: every reported spot within 150 m of your route, with alternatives ranked safest first.
-- **Nearby alerts** within 300 m, **SOS** quick-dial, share links for WhatsApp, insights, filters, and dark mode.
+[Why](#why-deathspot) · [Inspiration](#the-inspiration) · [How it works](#how-it-works) · [Contribute](#how-you-can-contribute) · [Tech stack](#tech-stack) · [Roadmap](#roadmap) · [Run it](#getting-started)
 
-**Moderation panel** at `/admin`, with a bottom tab bar on phones:
-- **Queue**: pending reports and flagged spots, with the public's flag reasons. Actions are approve, hide/reject, keep & dismiss flags, verify, edit, and delete.
-- **Edit** any spot, including dragging its pin on a map.
-- **All spots**: search and filter by status and category.
-- **Activity log**: who did what, when, and why.
-- **Settings** (admins): hold new reports for review or publish instantly, set the auto-hide flag threshold, and manage the team (add moderators or admins, change roles, remove access).
+</div>
 
-## Architecture
+---
+
+## Why Deathspot?
+
+Uganda Police's **Annual Crime Report 2025** recorded **4,328 people deliberately killed**, about **11 murders every day**. Assault (1,326 deaths) and mob action (950 deaths) were the leading causes, followed by strangulation, hacking, stabbing and blunt-force attacks. Adding road deaths, roughly **25 Ugandans die from these causes every day**.
+
+These killings don't happen at random. They cluster at dark junctions, boda stages where gangs wait, busy taxi parks at rush hour, and stretches of road with no patrols. **The people who live nearby know exactly where these places are.** Visitors, students, new residents and night-shift workers usually don't, until it's too late.
+
+That knowledge is scattered across WhatsApp groups, X threads and word of mouth. Deathspot UG gathers it in one place:
+
+- **A shared map** that anyone can add to and anyone can check before they travel.
+- **Community verification** so warnings stay current: spots are confirmed when others say they're still dangerous, and fade when they say it's improved.
+- **Practical tools**: check your route before a boda ride, get a warning when you're approaching a danger spot, and call for help in one tap.
+
+The aim isn't fear. It's **informed movement**: choosing another route, travelling in daylight, not walking alone, and pushing for patrols where they're needed most.
+
+## The inspiration
+
+In September 2026, **Moses Matovu was killed less than two minutes from CID Headquarters** in Kampala. Anthony Natif ([@TonyNatif](https://x.com/TonyNatif/status/2102998432218534245)) asked people to *"think about that"* and then did something useful. He tagged the police and listed the hotspots residents already knew:
+
+> Mukwano Road and the EC area · Kiwologoma · Katwe next to Banyakitara church · Kato–Kinyoro · Kikubamutwe near the police barracks · Kalerwe and the Nansana intersection, where *"bodas kill several people there."*
+
+He ended with *"People will add more spots."*
+
+Deathspot UG is built so that people **can** add more spots, in a structured, moderated and privacy-respecting way that the whole country can use. Every spot from that post is on the map, alongside hotspots named in police statements, each linked to its source.
+
+## How it works
+
+| | |
+|---|---|
+| 🗺️ **Live danger map** | Pins coloured by severity. They cluster when zoomed out, with a heatmap view to see hotspots at a glance. |
+| ➕ **Report in two taps** | Tap *Report*, drop a pin (or use GPS), and say what happened and when it's dangerous. No account needed. |
+| 👍 **Waze-style confirmation** | Voters answer *Still dangerous* or *Not anymore*. Three net confirmations mark a spot **community confirmed**. |
+| 🧭 **Route check** | Enter where you're going and see every reported spot within 150 m of each route option, safest first. |
+| 🔔 **Nearby alerts** | With location on, the phone buzzes when you're within 300 m of a danger spot. |
+| 🚩 **Report a problem** | Flag pins that are wrong, duplicated, abusive, or that name a person. Enough flags hide a pin until a moderator checks it. |
+| 🛡️ **Moderation** | Volunteer moderators review new and flagged reports, fix details, mark spots **verified**, and every action is logged. |
+| 🆘 **SOS** | One tap to call 999, 112, the National Emergency Call Centre, or police WhatsApp. |
+| 📤 **Warn others** | Share any spot as a link on WhatsApp. |
+
+### Ground rules
+
+1. **Report places, never people.** Don't name, describe or accuse anyone. Phone numbers are stripped automatically, and moderators remove anything that targets a person.
+2. **Report what you saw or what was credibly reported.** Add a news or police link when you can.
+3. **Community reports can be wrong.** Treat them as warnings, not evidence.
+4. **This map does not replace the police.** Always report crimes to them too.
+
+## How you can contribute
+
+You don't need to be a developer to help.
+
+### 🧍 Everyone
+- **Report spots** you know are dangerous, and **confirm or deny** existing ones when you pass by. Fresh votes keep the map honest.
+- **Flag** anything wrong, duplicated or harmful.
+- **Share** the map in your estate, campus, church and WhatsApp groups. More eyes mean better warnings.
+
+### 🛡️ Moderators
+We need trusted volunteers, ideally spread across Kampala, Wakiso, Mukono and upcountry districts, to review reports every day. Moderators should know their area, be fair, and follow the ground rules. Open an issue titled **"Moderator volunteer"** saying which areas you know.
+
+### 📚 Researchers & journalists
+Help us **seed well-sourced data**. Spots in [`data/seed.json`](data/seed.json) are loaded into every new installation. Each entry needs an approximate location, a category, a severity, and a **public source** (a police statement, reputable news, or a court record):
+
+```json
+{
+  "title": "Nansana intersection",
+  "description": "Boda boda gangs are reported to attack and kill people at the intersection.",
+  "lat": 0.36582, "lng": 32.52923, "area": "Nansana, Wakiso",
+  "category": "boda_gang", "severity": 5, "time_of_day": "night",
+  "source_url": "https://…"
+}
+```
+
+Categories: `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapping`, `other`. Severity runs from 1 (feels unsafe) to 5 (someone was killed).
+
+### 💻 Developers & designers
+1. Pick an issue, or something from the [roadmap](#roadmap), and comment that you're on it.
+2. Fork, create a branch (`feat/…`, `fix/…`), and follow [Getting started](#getting-started).
+3. Keep changes focused, match the existing code style, and run `pnpm lint && npx tsc --noEmit && pnpm build` before opening a PR.
+4. **Schema changes** go in a new numbered file in [`supabase/migrations/`](supabase/migrations). Never edit an existing migration. Every table needs row-level security.
+5. **Test on a phone-sized screen.** Most people will use Deathspot on a mid-range Android phone over mobile data.
+6. In the PR, describe what changed and how you tested it. Include screenshots for UI changes.
+
+### 🌍 Translators
+Luganda, Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso and more. See the roadmap. We'll add an i18n structure you can fill in.
+
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| Frontend | [Next.js 16](https://nextjs.org) (App Router), React 19, TypeScript |
+| UI | [shadcn/ui](https://ui.shadcn.com) (Radix), Tailwind CSS v4, lucide icons, Vaul drawers, Sonner toasts |
+| Maps | [Leaflet](https://leafletjs.com) + react-leaflet, marker clustering, heatmap, OpenStreetMap tiles |
+| Search & routing | OSM [Nominatim](https://nominatim.org) (Uganda only), [OSRM](https://project-osrm.org) with alternative routes |
+| Backend | **Self-hosted [Supabase](https://supabase.com)**: Postgres 17, GoTrue auth (moderators), PostgREST, Envoy gateway, Studio |
+| Security | Row-level security on every table, security-definer functions for writes, audit log, salted visitor hashes, rate limits, zod validation |
+| Deployment | Docker Compose on any VPS, with optional Caddy for automatic HTTPS |
+
+### Architecture
 
 ```
             ┌─────────── docker compose ───────────────────────────────────────┐
- browser ──▶│ caddy (https, optional) ──▶ app (Next.js 16, shadcn/ui, Leaflet) │
+ browser ──▶│ caddy (https, optional) ──▶ app (Next.js · shadcn/ui · Leaflet)  │
             │                                   │ supabase-js (server only)    │
             │                                   ▼                              │
             │           api-gw (Envoy) ──▶ auth (GoTrue) · rest (PostgREST)    │
@@ -35,20 +121,88 @@ Uganda Police recorded 4,328 murders in 2025, about 11 a day. After Moses Matovu
             └──────────────────────────────────────────────────────────────────┘
 ```
 
-- **Self-hosted Supabase**, following the [official docker setup](https://github.com/supabase/supabase/tree/master/docker) with the same images, trimmed to what the app uses. Realtime, storage, edge functions and the pooler are left out; add them from upstream if you need them.
-- The browser never talks to Supabase directly. Next.js API routes validate input, rate-limit, and hash the visitor id, then call Postgres functions.
-- **Row-level security** everywhere:
-  - The anon role can read only *approved* spots and their public columns.
-  - Moderator actions run as the signed-in moderator's JWT through security-definer functions that check `is_moderator()` / `is_admin()` and write the audit log.
-- On startup the app applies `supabase/migrations/*.sql`, seeds `data/seed.json` once, and creates the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD` (see `lib/bootstrap.ts`).
+- **The browser never talks to Supabase directly.** Next.js API routes validate input, rate-limit, and hash the visitor, then call Postgres functions.
+- **The anon role can read only approved spots** and only their public columns.
+- **Moderators act with their own JWT.** Database functions check `is_moderator()` / `is_admin()` and write to `moderation_log`.
+- **On startup** the app applies migrations, seeds `data/seed.json` once, and creates the first admin (see [`lib/bootstrap.ts`](lib/bootstrap.ts)).
 
-## Deploy on a VPS
+### Project layout
 
-Requirements: a Linux VPS with 2 GB+ RAM, Docker with the compose plugin, Node 20+ (only to generate secrets), and a domain pointed at the server.
+```
+app/                 pages, API routes (app/api), admin panel (app/admin)
+components/          map, report/route/flag UI, admin components, shadcn/ui
+lib/                 data access (db.ts, admin.ts), Supabase clients, geo, validation
+supabase/migrations  schema, RLS policies and moderation functions
+data/seed.json       sourced starting spots
+docker/              Supabase gateway + db init config, Caddyfile
+```
+
+## Roadmap
+
+Improvements we plan to make. Contributions are welcome on any of these.
+
+**Reach & access**
+- [ ] 🌍 **Local languages**: Luganda first, then Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso.
+- [ ] 📱 **Installable PWA with offline mode**: cache the map and danger spots for patchy connections.
+- [ ] 💬 **USSD / SMS & WhatsApp bot**: report and check areas from feature phones (e.g. `*xxx#` → "Is Kalerwe safe tonight?").
+- [ ] 🪶 **Data-light mode**: vector tiles, smaller bundles, and fewer requests for low-end Android phones.
+
+**Safety features**
+- [ ] 🧭 **True "avoid danger" routing**: route *around* spots (a custom OSRM/Valhalla profile) instead of only flagging them.
+- [ ] 🕒 **Time-aware risk**: weight spots by time of day, so night-only spots matter less at noon.
+- [ ] 📍 **Share my trip**: send a live location link to a trusted contact for a boda or night walk.
+- [ ] 🔔 **Area watch**: subscribe to an estate or route and get push/SMS alerts about new confirmed spots.
+- [ ] ⚡ **Live updates** with Supabase Realtime instead of polling.
+
+**Trust & data quality**
+- [ ] 🧑‍⚖️ **Moderator reputation & regions**: assign moderators to districts and track review times.
+- [ ] 🤖 **Duplicate & abuse detection**: merge nearby duplicates, and catch names and accusations before publishing.
+- [ ] 📸 **Evidence attachments** (with face/plate blurring) via Supabase Storage.
+- [ ] ⏳ **Decay**: spots with no recent confirmations fade out automatically.
+- [ ] 🔐 Moderator **2FA** and SMTP-based password resets.
+
+**Impact & transparency**
+- [ ] 📊 **Public open-data dashboard & API**: trends by district, category and time for journalists, researchers and policymakers.
+- [ ] 🚓 **Patrol request reports**: a monthly, source-linked hotspot summary to share with the police and local leaders.
+- [ ] 🗂️ Import historical data from the UPF Annual Crime Reports.
+
+**Engineering**
+- [ ] ✅ Test suite: unit tests (geo, validation), SQL tests for RLS and functions, and Playwright end-to-end tests on mobile viewports.
+- [ ] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images.
+- [ ] 🗺️ Self-hosted tiles, geocoding and routing to stay within OSM usage policies at scale.
+- [ ] 🛡️ Distributed rate limiting (Postgres/Redis) for multi-replica deployments.
+
+Have an idea? Open an issue.
+
+## Getting started
+
+### Local development
+
+Requirements: Node 20+, pnpm, Docker.
 
 ```bash
-git clone <this repo> deathspot && cd deathspot
-node scripts/setup-env.mjs          # writes .env with fresh secrets; prints the admin + Studio logins
+pnpm install
+pnpm setup:env      # creates .env with fresh secrets (prints the admin + Studio logins)
+pnpm supabase:up    # Postgres, Auth, PostgREST, gateway and Studio in Docker
+pnpm dev            # http://localhost:3000; migrates + seeds on start
+```
+
+| URL | What |
+| --- | --- |
+| http://localhost:3000 | The map |
+| http://localhost:3000/admin | Moderation panel. Login is `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env`. |
+| http://localhost:8000 | Supabase Studio. Login is `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD`. |
+
+- Run the full stack in containers: `docker compose up -d --build`.
+- Wipe all local data: `docker compose down -v`.
+
+### Deploy on a VPS
+
+Requirements: a Linux VPS with 2 GB+ RAM, Docker with the compose plugin, and a domain pointed at the server.
+
+```bash
+git clone https://github.com/mwanjajoel/deathspot.git && cd deathspot
+node scripts/setup-env.mjs
 ```
 
 Edit `.env`:
@@ -62,76 +216,57 @@ Edit `.env`:
 | `APP_BIND` | `127.0.0.1`, so only Caddy can reach the app |
 | `NOMINATIM_USER_AGENT` | Your site and contact email (required by OSM policy) |
 
-Then start everything with automatic HTTPS:
-
 ```bash
 docker compose --profile https up -d --build
 docker compose logs -f app          # wait for "[bootstrap] ready"
 ```
 
-- The map is at `https://APP_DOMAIN`, and moderators sign in at `https://APP_DOMAIN/admin`.
-- The Supabase Studio dashboard is at `https://SUPABASE_DOMAIN` (basic auth: `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD`).
-
-Firewall: open only 22, 80, and 443. Postgres (55432) and the gateway (8000) are bound to localhost.
-
-**Behind Cloudflare or another proxy?** The app reads `CF-Connecting-IP`, then `X-Forwarded-For`, to tell visitors apart for voting and rate limits. Don't expose port 3000 directly to the internet, because clients could spoof those headers.
+Open only ports 22, 80 and 443. Postgres (55432) and the gateway (8000) listen on localhost only. Keep the app behind Caddy or Cloudflare: visitor identity comes from `CF-Connecting-IP` / `X-Forwarded-For`, which clients can spoof if port 3000 is exposed directly.
 
 ### Operations
 
 ```bash
-docker compose ps                                   # health of every service
-docker compose pull && docker compose up -d --build # update images and app
-docker compose exec db pg_dump -U postgres -d postgres -Fc > backup-$(date +%F).dump   # backup
-docker compose exec -T db pg_restore -U postgres -d postgres --clean < backup.dump      # restore
+docker compose ps                                                                     # service health
+docker compose pull && docker compose up -d --build                                   # update
+docker compose exec db pg_dump -U postgres -d postgres -Fc > backup-$(date +%F).dump  # backup
+docker compose exec -T db pg_restore -U postgres -d postgres --clean < backup.dump     # restore
 ```
 
-- **Database schema changes:** add a new numbered file in `supabase/migrations/`. It is applied once on the next start.
-- **Changing secrets:** rotating `JWT_SECRET` requires regenerating `ANON_KEY` and `SERVICE_ROLE_KEY`. `node scripts/setup-env.mjs --force` does all of it, but only before your first deploy, because it also changes the database password.
-
-## Local development
-
-```bash
-pnpm install
-pnpm setup:env      # creates .env (once)
-pnpm supabase:up    # db, auth, rest, gateway, studio in Docker
-pnpm dev            # http://localhost:3000; migrates + seeds on start
-```
-
-- Admin panel: http://localhost:3000/admin (the login is printed by `setup:env` and stored in `.env`).
-- Studio: http://localhost:8000.
-- Full production-like run: `docker compose up -d --build`, with the app at `APP_PORT`.
-- Reset all data: `docker compose down -v`.
-
-## Data & API
-
-| Path | Purpose |
-| --- | --- |
-| `data/seed.json` | Human-editable starting spots with sources. **Add well-sourced spots via pull request.** It is loaded into a fresh database once. |
-| `supabase/migrations/` | Schema, RLS policies, and moderation functions |
+### API
 
 | Method | Route | |
 | --- | --- | --- |
 | GET | `/api/spots?category=&since=` | Approved spots |
-| POST | `/api/spots` | Report (validated, inside Uganda, 5/hour). Returns `pending: true` when approval is required. |
+| POST | `/api/spots` | Report a spot (validated, must be inside Uganda, 5/hour). Returns `pending: true` when approval is required. |
 | POST | `/api/spots/:id/vote` | `{ "value": 1 \| -1 }` |
 | POST | `/api/spots/:id/flag` | `{ "reason": "inaccurate" \| "names_person" \| "duplicate" \| "abusive" \| "resolved" \| "other", "note"? }` |
 | GET | `/api/route?from=lat,lng&to=lat,lng` | Routes with the danger spots along each |
-| GET | `/api/geocode?q=` | Place search (Nominatim, Uganda only) |
+| GET | `/api/geocode?q=` | Place search (Uganda only) |
 | GET | `/api/stats`, `/api/health` | Insights and health check |
 
-## Privacy & safety rules
+## Privacy
 
-- **Places, not people.** The UI asks reporters not to name anyone, phone numbers are stripped server-side, and flags let the public report violations.
-- There are no public accounts. Visitors are identified only by a salted hash of IP + user agent, used for one vote per spot and rate limits. Hashes are never exposed through the API.
+- There are **no public accounts**. Visitors are identified only by a salted hash of IP + user agent, used for one vote per spot and for rate limits. Raw IPs are never stored, and hashes are never exposed.
+- No names, photos or phone numbers of individuals are collected.
 - Moderation is accountable: every action is logged with the moderator and a reason.
-- Seed pins mark *approximate areas* from public reports. Reports are community submitted and can be wrong; this is a warning system, not evidence. Always report crimes to the police.
 
-## Sources for the seed data
+## Sources
 
-- [@TonyNatif on X](https://x.com/TonyNatif/status/2102998432218534245) (Sept 2026)
-- [AllAfrica: Crime Report 2025, 25 Ugandans killed daily](https://allafrica.com/stories/202603310303.html)
+- [@TonyNatif on X](https://x.com/TonyNatif/status/2102998432218534245) (September 2026)
+- [AllAfrica / Daily Monitor: Crime Report 2025, 25 Ugandans killed daily](https://allafrica.com/stories/202603310303.html)
 - [UG Mirror: police name Kampala Metropolitan hotspots](https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/)
 - [AllAfrica: police crackdown on Kampala hotspots](https://allafrica.com/stories/202601130514.html)
 - [The Observer: police report unmasks Uganda's top crimes](https://observer.ug/news/police-report-unmasks-ugandas-7-top-crimes/)
+- [Uganda Police Force](https://upf.go.ug/)
 
-Map data © OpenStreetMap contributors.
+Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
+
+---
+
+<div align="center">
+
+**If a crime has just happened, call 999 or 112 first.**
+
+Built by the community, for the community. 🇺🇬
+
+</div>
