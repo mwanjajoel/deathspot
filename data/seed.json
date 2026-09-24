@@ -1,0 +1,153 @@
+{
+  "_note": "Seed danger areas for Deathspot UG. Each entry marks an approximate AREA reported in public sources — not an exact address and never an accusation against any person. Add spots via pull request; include a source_url.",
+  "spots": [
+    {
+      "title": "Mukwano Road (near CID HQ)",
+      "description": "Moses Matovu was reportedly killed here, less than two minutes from CID Headquarters. Residents are calling for more police patrols on Mukwano Road.",
+      "lat": 0.30827, "lng": 32.58721, "area": "Kibuli, Makindye",
+      "category": "murder", "severity": 5, "time_of_day": "night",
+      "incident_date": "2026-09-23",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Jinja Road by the Electoral Commission",
+      "description": "Mentioned alongside Mukwano Road in the same appeal for more police patrols.",
+      "lat": 0.31662, "lng": 32.59424, "area": "Lugogo, Nakawa",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Kiwologoma",
+      "description": "Named as a hotspot needing police patrols.",
+      "lat": 0.43740, "lng": 32.64576, "area": "Kira, Wakiso",
+      "category": "boda_gang", "severity": 4, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Katwe, near Banyakitara church",
+      "description": "Reported hotspot in Katwe near the Banyakitara church.",
+      "lat": 0.29720, "lng": 32.57588, "area": "Katwe, Makindye",
+      "category": "robbery", "severity": 4, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Kato – Kinyoro",
+      "description": "Reported hotspot along the Kato–Kinyoro stretch.",
+      "lat": 0.28545, "lng": 32.62605, "area": "Bukasa, Makindye",
+      "category": "boda_gang", "severity": 4, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Kikubamutwe, near the police barracks",
+      "description": "Reported hotspot close to the police barracks. The location is approximate.",
+      "lat": 0.29650, "lng": 32.60300, "area": "Kabalagala, Makindye",
+      "category": "robbery", "severity": 4, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Kalerwe",
+      "description": "Boda boda gangs are reported to attack and kill people in the Kalerwe area.",
+      "lat": 0.34918, "lng": 32.57195, "area": "Kawempe",
+      "category": "boda_gang", "severity": 5, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Nansana intersection",
+      "description": "Boda boda gangs are reported to attack and kill people at the Nansana intersection.",
+      "lat": 0.36582, "lng": 32.52923, "area": "Nansana, Wakiso",
+      "category": "boda_gang", "severity": 5, "time_of_day": "night",
+      "source_url": "https://x.com/TonyNatif/status/2102998432218534245"
+    },
+    {
+      "title": "Arua Park",
+      "description": "Named by police as a known crime hotspot targeted in operations. Snatching and robberies happen at rush hour.",
+      "lat": 0.31625, "lng": 32.57506, "area": "Kisenyi, Central",
+      "category": "robbery", "severity": 3, "time_of_day": "any",
+      "source_url": "https://allafrica.com/stories/202601130514.html"
+    },
+    {
+      "title": "Old Taxi Park",
+      "description": "Named by police as a known crime hotspot. Phones and bags are snatched in the rush-hour crowds.",
+      "lat": 0.31223, "lng": 32.57696, "area": "Nakivubo, Central",
+      "category": "robbery", "severity": 3, "time_of_day": "any",
+      "source_url": "https://allafrica.com/stories/202601130514.html"
+    },
+    {
+      "title": "Nakivubo Road",
+      "description": "Named by police as a known crime hotspot targeted in operations.",
+      "lat": 0.31934, "lng": 32.57203, "area": "Central",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://allafrica.com/stories/202601130514.html"
+    },
+    {
+      "title": "Nkrumah Road",
+      "description": "Named by police as a known crime hotspot targeted in operations.",
+      "lat": 0.31189, "lng": 32.58526, "area": "Central",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://allafrica.com/stories/202601130514.html"
+    },
+    {
+      "title": "Kira Division",
+      "description": "Police intelligence says a large share of recent complaints in Kampala Metropolitan came from here, including break-ins and violent robberies.",
+      "lat": 0.40034, "lng": 32.63918, "area": "Kira, Wakiso",
+      "category": "robbery", "severity": 4, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Kyengera",
+      "description": "Named by police as a source of many recent crime complaints.",
+      "lat": 0.29461, "lng": 32.50210, "area": "Kyengera, Wakiso",
+      "category": "robbery", "severity": 4, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Sonde – Wantoni stretch (Kampala–Jinja Rd)",
+      "description": "Police named the Sonde to Wantoni stretch in Mukono as a major source of complaints.",
+      "lat": 0.37300, "lng": 32.72200, "area": "Mukono",
+      "category": "robbery", "severity": 4, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Namugongo",
+      "description": "Named in police crime operations in the Kampala Metropolitan area.",
+      "lat": 0.39072, "lng": 32.65420, "area": "Kira, Wakiso",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Namungoona",
+      "description": "Named in police crime operations in the Kampala Metropolitan area.",
+      "lat": 0.34012, "lng": 32.54613, "area": "Rubaga",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Nateete",
+      "description": "Named in police crime operations in the Kampala Metropolitan area.",
+      "lat": 0.29862, "lng": 32.53250, "area": "Rubaga",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Kajjansi",
+      "description": "Named in police crime operations in the Kampala Metropolitan area.",
+      "lat": 0.21054, "lng": 32.54267, "area": "Entebbe Rd, Wakiso",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Bulindo – Katuli zone",
+      "description": "Named in police crime operations in the Kampala Metropolitan area.",
+      "lat": 0.43333, "lng": 32.63333, "area": "Kira, Wakiso",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    },
+    {
+      "title": "Busega",
+      "description": "Busega Zone 8 was named in police crime operations.",
+      "lat": 0.30932, "lng": 32.51896, "area": "Rubaga",
+      "category": "robbery", "severity": 3, "time_of_day": "night",
+      "source_url": "https://ugmirror.com/index.php/2026/02/17/crime-wave-rocks-kampala-metropolitan-area-as-police-name-hotspots-arrest-over-250-suspects/"
+    }
+  ]
+}
