@@ -4,7 +4,7 @@ import { defineConfig } from "@cloudflare/nimbus-docs/config";
 export default defineConfig({
   // Canonical origin of the deployed docs (no trailing slash). Drives canonical URLs,
   // OG images, robots.txt, the sitemap and the links in /llms.txt.
-  site: "https://docs.deathspot.example.com",
+  site: "https://docs.deathspot.org",
   title: "Deathspot UG Developers",
   description: "Build on the community-led danger map of Uganda: read spots, report new ones, confirm them and check routes.",
   locale: "en",

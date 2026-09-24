@@ -34,7 +34,7 @@ services:
       VOTER_SALT: ${VOTER_SALT}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-DeathspotUG/0.2 (community safety map; https://github.com/mwanjajoel/deathspot)}
+      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-DeathspotUG/0.2 (community safety map; https://deathspot.org)}
       TRUST_PROXY: ${TRUST_PROXY:-true}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]

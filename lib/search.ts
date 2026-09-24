@@ -31,7 +31,7 @@ export const NEARBY_RADIUS_M = 2000
 const CACHE_TTL_MS = 30 * 24 * 3600 * 1000
 /** west,north,east,south */
 const KAMPALA_VIEWBOX = "32.35,0.55,32.85,0.05"
-const UA = process.env.NOMINATIM_USER_AGENT ?? "DeathspotUG/0.2 (community safety map; https://github.com/mwanjajoel/deathspot)"
+const UA = process.env.NOMINATIM_USER_AGENT ?? "DeathspotUG/0.2 (community safety map; https://deathspot.org)"
 
 type Geocoded = Omit<PlaceHit, "nearby">
 

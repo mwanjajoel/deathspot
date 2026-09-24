@@ -27,12 +27,12 @@ info:
     url: https://github.com/mwanjajoel/deathspot/blob/main/LICENSE
   contact:
     name: Deathspot UG
-    url: https://github.com/mwanjajoel/deathspot
+    url: https://deathspot.org
 servers:
+  - url: https://deathspot.org
+    description: Production
   - url: http://localhost:3000
     description: Local development (`pnpm dev`)
-  - url: https://deathspot.example.com
-    description: Your deployment. Replace with your APP_DOMAIN.
 tags:
   - name: Spots
     description: Read the map and report new danger spots.

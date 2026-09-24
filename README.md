@@ -6,6 +6,8 @@
 
 Think *Waze*, but for danger.
 
+**🌍 [deathspot.org](https://deathspot.org)** · **📚 [Developer docs](https://docs.deathspot.org)** · **🔌 [API reference](https://docs.deathspot.org/api)**
+
 [Why](#why-deathspot) · [Inspiration](#the-inspiration) · [How it works](#how-it-works) · [Contribute](#how-you-can-contribute) · [Tech stack](#tech-stack) · [Roadmap](#roadmap) · [Run it](#getting-started)
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js 16](https://img.shields.io/badge/Next.js-16-black) ![Supabase](https://img.shields.io/badge/Supabase-self--hosted-3ECF8E) ![shadcn/ui](https://img.shields.io/badge/UI-shadcn%2Fui-111)
@@ -240,7 +242,7 @@ Edit `.env`:
 | Variable | Set to |
 | --- | --- |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Your first admin login. Change the password after signing in. |
-| `APP_DOMAIN`, `SUPABASE_DOMAIN`, `ACME_EMAIL` | e.g. `deathspot.ug`, `supabase.deathspot.ug`, your email |
+| `APP_DOMAIN`, `SUPABASE_DOMAIN`, `ACME_EMAIL` | `deathspot.org`, `supabase.deathspot.org` and your email for Let's Encrypt |
 | `SITE_URL` | `https://$APP_DOMAIN` |
 | `SUPABASE_PUBLIC_URL` / `API_EXTERNAL_URL` | `https://$SUPABASE_DOMAIN` and `https://$SUPABASE_DOMAIN/auth/v1` |
 | `APP_BIND` | `127.0.0.1`, so only Caddy can reach the app |
@@ -264,7 +266,8 @@ docker compose exec -T db pg_restore -U postgres -d postgres --clean < backup.du
 
 ### API
 
-The public HTTP API is documented in a **developer docs site** built with
+The public API is served at **`https://deathspot.org/api`** and documented at
+**[docs.deathspot.org](https://docs.deathspot.org)**, a developer docs site built with
 [Nimbus](https://github.com/cloudflare/nimbus) in [`developer-docs/`](developer-docs):
 
 - **Guides**: introduction, quickstart, core concepts, errors and limits, recipes, and contributing.
@@ -280,8 +283,8 @@ pnpm docs:build     # static site in developer-docs/dist
 ```
 
 The docs site deploys anywhere static files can be served, or to Cloudflare with
-`pnpm --dir developer-docs run deploy`. Set `site` in `developer-docs/nimbus.config.ts` to your
-docs domain first.
+`pnpm --dir developer-docs run deploy`. It's configured for `https://docs.deathspot.org` (`site` in
+`developer-docs/nimbus.config.ts`); change that if you host the docs elsewhere.
 
 | Method | Route | |
 | --- | --- | --- |
