@@ -15,6 +15,10 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: deps
+    ignore:
+      # Types follow the Node version we run (node:24 in the Dockerfile), not the newest Node.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
     groups:
       app-minor-and-patch:
         update-types: [minor, patch]
@@ -66,6 +70,9 @@ updates:
     commit-message:
       prefix: docker
     ignore:
+      # Node majors are upgraded by hand, to the next LTS (even) release only.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
       # A new Postgres major needs a dump and restore, so it's upgraded by hand.
       - dependency-name: supabase/postgres
         update-types: [version-update:semver-major]
@@ -86,3 +93,5 @@ updates:
     ignore:
       - dependency-name: supabase/postgres
         update-types: [version-update:semver-major]
+      # Built from this repository, not pulled from a registry.
+      - dependency-name: "deathspot-*"
