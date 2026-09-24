@@ -184,7 +184,7 @@ Improvements we plan to make, tracked on the [Deathspot roadmap board](https://g
 
 **Engineering**
 - [ ] 🎭 Playwright end-to-end tests of the UI on mobile viewports. ([#18](https://github.com/mwanjajoel/deathspot/issues/18))
-- [ ] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images. ([#19](https://github.com/mwanjajoel/deathspot/issues/19))
+- [x] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images. ([#19](https://github.com/mwanjajoel/deathspot/issues/19))
 - [ ] 🗺️ Self-hosted tiles, geocoding and routing to stay within OSM usage policies at scale. ([#20](https://github.com/mwanjajoel/deathspot/issues/20))
 - [x] 🛡️ Shared rate limiting in Postgres, with `RateLimit-*` headers. ([#21](https://github.com/mwanjajoel/deathspot/issues/21))
 - [x] ✅ Unit and integration tests at 100% coverage of server code. ([#22](https://github.com/mwanjajoel/deathspot/issues/22))
