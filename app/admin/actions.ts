@@ -1,11 +1,13 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import { requireAdmin, requireModerator, type LogEntry, type Moderator, type Role } from "@/lib/admin"
 import { CATEGORY_KEYS, TIMES_OF_DAY } from "@/lib/categories"
 import { inUganda } from "@/lib/geo"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { serviceClient, userClient } from "@/lib/supabase/server"
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string }
@@ -14,10 +16,7 @@ const done = (message?: string): ActionResult => {
   revalidatePath("/admin", "layout")
   return { ok: true, message }
 }
-const failed = (error: unknown): ActionResult => ({
-  ok: false,
-  error: error instanceof Error ? error.message : typeof error === "string" ? error : "Something went wrong",
-})
+const failed = (error: string): ActionResult => ({ ok: false, error })
 
 // ---------------------------------------------------------------- auth
 
@@ -25,6 +24,10 @@ export async function signIn(_: ActionResult | null, form: FormData): Promise<Ac
   const email = String(form.get("email") ?? "").trim()
   const password = String(form.get("password") ?? "")
   if (!email || !password) return failed("Enter your email and password")
+
+  // Brute-force protection: every attempt counts, per network, before the password is checked.
+  const limit = await checkRateLimit(await headers(), "login")
+  if (!limit.allowed) return failed(limit.policy.message)
 
   const supabase = await userClient()
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -96,7 +99,7 @@ export type SpotEdit = z.input<typeof editSchema>
 export async function updateSpot(id: number, input: SpotEdit): Promise<ActionResult> {
   await requireModerator()
   const parsed = editSchema.safeParse(input)
-  if (!parsed.success) return failed(parsed.error.issues[0]?.message ?? "Invalid input")
+  if (!parsed.success) return failed(parsed.error.issues[0].message)
   const { note, ...patch } = parsed.data
   const supabase = await userClient()
   const { error } = await supabase.rpc("admin_update_spot", { p_spot: id, p: patch, p_note: note ?? null })
@@ -169,7 +172,7 @@ const memberSchema = z.object({
 export async function addMember(_: ActionResult | null, form: FormData): Promise<ActionResult> {
   const me = await requireAdmin()
   const parsed = memberSchema.safeParse(Object.fromEntries(form))
-  if (!parsed.success) return failed(parsed.error.issues[0]?.message ?? "Invalid input")
+  if (!parsed.success) return failed(parsed.error.issues[0].message)
   const { email, password, role } = parsed.data
   const { error } = await serviceClient().auth.admin.createUser({
     email,

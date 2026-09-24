@@ -5,10 +5,10 @@ import { ArrowDownUpIcon, CrosshairIcon, Loader2Icon, ShieldCheckIcon, TriangleA
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlaceSearch } from "@/components/place-search"
+import { PlaceSearch, type SearchSelection } from "@/components/place-search"
 import { CATEGORIES, severityColor, type Spot } from "@/lib/categories"
 import { formatDistance, type LatLng } from "@/lib/geo"
-import type { Place, RouteResult } from "@/lib/types"
+import type { RouteResult } from "@/lib/types"
 import { cn, formatDuration } from "@/lib/utils"
 
 type Endpoint = (LatLng & { label: string }) | null
@@ -50,7 +50,7 @@ export function RoutePlanner({ me, requestLocation, routes, activeRoute, onRoute
     if (p) setFrom({ ...p, label: "My location" })
   }
 
-  const pick = (setter: (e: Endpoint) => void) => (p: Place) => setter({ lat: p.lat, lng: p.lng, label: p.name })
+  const pick = (setter: (e: Endpoint) => void) => (p: SearchSelection) => setter({ lat: p.lat, lng: p.lng, label: p.name })
 
   const r = routes[activeRoute]
 

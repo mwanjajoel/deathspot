@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // The Astro/Nimbus docs site has its own tooling (astro check, nimbus-docs lint).
     "developer-docs/**",
+    "coverage/**",
   ]),
 ]);
 

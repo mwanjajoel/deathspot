@@ -93,9 +93,9 @@ export default function AboutPage() {
       <h2 className="mb-3 text-lg font-semibold">Emergency contacts</h2>
       <div className="mb-8 grid gap-2 sm:grid-cols-2">
         {EMERGENCY_CONTACTS.map((c) => (
-          <a key={c.number} href={c.href ?? `tel:${c.number}`} className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-accent">
+          <a key={c.number} href={c.href} className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-accent">
             <span>{c.label}</span>
-            <span className="font-mono font-semibold">{c.number}</span>
+            <span className="font-mono font-semibold whitespace-nowrap">{c.number}</span>
           </a>
         ))}
       </div>

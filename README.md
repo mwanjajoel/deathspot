@@ -50,10 +50,11 @@ Deathspot UG is built so that people **can** add more spots, in a structured, mo
 | ➕ **Report in two taps** | Tap *Report*, drop a pin (or use GPS), and say what happened and when it's dangerous. No account needed. |
 | 👍 **Waze-style confirmation** | Voters answer *Still dangerous* or *Not anymore*. Three net confirmations mark a spot **community confirmed**. |
 | 🧭 **Route check** | Enter where you're going and see every reported spot within 150 m of each route option, safest first. |
+| 🔎 **Real-time search** | Mapped spots appear as you type, even with typos. Searching any place lists the danger spots within 2 km. |
 | 🔔 **Nearby alerts** | With location on, the phone buzzes when you're within 300 m of a danger spot. |
 | 🚩 **Report a problem** | Flag pins that are wrong, duplicated, abusive, or that name a person. Enough flags hide a pin until a moderator checks it. |
 | 🛡️ **Moderation** | Volunteer moderators review new and flagged reports, fix details, mark spots **verified**, and every action is logged. |
-| 🆘 **SOS** | One tap to call 999, 112, the National Emergency Call Centre, or police WhatsApp. |
+| 🆘 **SOS** | One tap opens the phone dialler: 999, 112, the National Emergency Call Centre (0800 199 399) or the police line +256 779 999 999. |
 | 📤 **Warn others** | Share any spot as a link on WhatsApp. |
 
 ### Ground rules
@@ -93,7 +94,7 @@ Categories: `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapp
 ### 💻 Developers & designers
 1. Pick an issue, or something from the [roadmap](#roadmap), and comment that you're on it.
 2. Fork, create a branch (`feat/…`, `fix/…`), and follow [Getting started](#getting-started).
-3. Keep changes focused, match the existing code style, and run `pnpm lint && npx tsc --noEmit && pnpm build` before opening a PR.
+3. Keep changes focused, match the existing code style, and run `pnpm lint && npx tsc --noEmit && pnpm test:coverage && pnpm build` before opening a PR. Coverage must stay at 100%.
 4. **Schema changes** go in a new numbered file in [`supabase/migrations/`](supabase/migrations). Never edit an existing migration. Every table needs row-level security.
 5. **API changes** must update the OpenAPI spec in [`developer-docs/src/api/openapi.yaml`](developer-docs/src/api/openapi.yaml) in the same PR. The API reference is generated from it.
 6. **Test on a phone-sized screen.** Most people will use Deathspot on a mid-range Android phone over mobile data.
@@ -130,6 +131,8 @@ Luganda, Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso and more. See the roadma
 
 - **The browser never talks to Supabase directly.** Next.js API routes validate input, rate-limit, and hash the visitor, then call Postgres functions.
 - **The anon role can read only approved spots** and only their public columns.
+- **Rate limits** are shared across replicas through a sliding-window counter in Postgres, and every
+  response carries `RateLimit-*` headers (see the developer docs' Rate limits guide).
 - **Moderators act with their own JWT.** Database functions check `is_moderator()` / `is_admin()` and write to `moderation_log`.
 - **On startup** the app applies migrations, seeds `data/seed.json` once, and creates the first admin (see [`lib/bootstrap.ts`](lib/bootstrap.ts)).
 
@@ -175,10 +178,11 @@ Improvements we plan to make. Contributions are welcome on any of these.
 - [ ] 🗂️ Import historical data from the UPF Annual Crime Reports.
 
 **Engineering**
-- [ ] ✅ Test suite: unit tests (geo, validation), SQL tests for RLS and functions, and Playwright end-to-end tests on mobile viewports.
+- [ ] 🎭 Playwright end-to-end tests of the UI on mobile viewports.
 - [ ] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images.
 - [ ] 🗺️ Self-hosted tiles, geocoding and routing to stay within OSM usage policies at scale.
-- [ ] 🛡️ Distributed rate limiting (Postgres/Redis) for multi-replica deployments.
+- [x] 🛡️ Shared rate limiting in Postgres, with `RateLimit-*` headers.
+- [x] ✅ Unit and integration tests at 100% coverage of server code.
 
 Have an idea? Open an issue.
 
@@ -203,6 +207,24 @@ pnpm dev            # http://localhost:3000; migrates + seeds on start
 
 - Run the full stack in containers: `docker compose up -d --build`.
 - Wipe all local data: `docker compose down -v`.
+
+### Tests
+
+```bash
+pnpm supabase:up        # integration tests use the real local stack
+pnpm test               # unit + integration
+pnpm test:coverage      # enforces 100% statements, branches, functions and lines
+```
+
+- **Unit tests** (`test/unit/`) cover pure logic and failure paths with mocked clients.
+- **Integration tests** (`test/integration/`) call the real route handlers and admin server
+  actions against Postgres, PostgREST and GoTrue. They exercise RLS, voting, flags, rate limits
+  and search.
+- Only third-party services (OSRM, Nominatim) are faked. Test data is prefixed `[test]` and
+  cleaned up afterwards.
+
+Coverage spans all server-side code: `lib/`, `app/api/`, the admin server actions, `proxy.ts` and
+`instrumentation.ts`.
 
 ### Deploy on a VPS
 
@@ -268,7 +290,7 @@ docs domain first.
 | POST | `/api/spots/:id/vote` | Confirm (`1`) or deny (`-1`) |
 | POST | `/api/spots/:id/flag` | Report a problem to moderators |
 | GET | `/api/route?from=lat,lng&to=lat,lng` | Routes with the danger spots along each |
-| GET | `/api/geocode?q=` | Place search (Uganda only) |
+| GET | `/api/search?q=` | Real-time search: mapped spots (fuzzy) and places, each with nearby spots |
 | GET | `/api/stats`, `/api/me`, `/api/health` | Insights, caller state, health |
 
 ## Privacy

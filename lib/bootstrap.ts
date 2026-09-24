@@ -10,7 +10,11 @@ const SEED_PATH = path.join(process.cwd(), "data", "seed.json")
 const log = (...args: unknown[]) => console.log("[bootstrap]", ...args)
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-async function connect(url: string) {
+/** How long to wait for the database and auth to come up (containers start in any order). */
+export type Retry = { attempts: number; delayMs: number }
+const DEFAULT_RETRY: Retry = { attempts: 30, delayMs: 2000 }
+
+async function connect(url: string, retry: Retry) {
   for (let attempt = 1; ; attempt++) {
     const client = new Client({ connectionString: url })
     try {
@@ -18,9 +22,9 @@ async function connect(url: string) {
       return client
     } catch (e) {
       await client.end().catch(() => {})
-      if (attempt >= 30) throw e
+      if (attempt >= retry.attempts) throw e
       log(`database not ready (${(e as Error).message}); retrying…`)
-      await sleep(2000)
+      await sleep(retry.delayMs)
     }
   }
 }
@@ -96,7 +100,7 @@ async function seed(db: Client) {
 }
 
 /** Creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD if nobody holds the admin role yet. */
-async function ensureAdmin(db: Client) {
+async function ensureAdmin(db: Client, retry: Retry) {
   const email = process.env.ADMIN_EMAIL?.trim()
   const password = process.env.ADMIN_PASSWORD
   if (!email || !password) return
@@ -120,31 +124,31 @@ async function ensureAdmin(db: Client) {
     }
     if (/already been registered|already exists/i.test(error.message)) {
       // Existing account (e.g. a former moderator): promote it.
-      const { data } = await db.query("select id from auth.users where lower(email) = lower($1)", [email]).then((r) => ({ data: r.rows[0] }))
-      if (data) await supabase.auth.admin.updateUserById(data.id, { app_metadata: { role: "admin" } })
+      const { rows } = await db.query("select id from auth.users where lower(email) = lower($1)", [email])
+      await supabase.auth.admin.updateUserById(rows[0].id, { app_metadata: { role: "admin" } })
       log(`promoted existing user ${email} to admin`)
       return
     }
-    if (attempt >= 20) throw error
+    if (attempt >= retry.attempts) throw error
     log(`auth not ready (${error.message}); retrying…`)
-    await sleep(3000)
+    await sleep(retry.delayMs)
   }
 }
 
 let started: Promise<void> | null = null
 
-export function bootstrap() {
+export function bootstrap(retry: Retry = DEFAULT_RETRY) {
   return (started ??= (async () => {
     const url = process.env.DATABASE_URL
     if (!url) {
       log("DATABASE_URL not set; skipping migrations and seeding")
       return
     }
-    const db = await connect(url)
+    const db = await connect(url, retry)
     try {
       await migrate(db)
       await seed(db)
-      await ensureAdmin(db)
+      await ensureAdmin(db, retry)
       log("ready")
     } finally {
       await db.end()

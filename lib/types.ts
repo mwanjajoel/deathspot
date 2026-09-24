@@ -11,6 +11,4 @@ export type RouteResult = {
   risk: number
 }
 
-export type Place = { name: string; detail: string; lat: number; lng: number }
-
 export type FlyTarget = LatLng & { zoom?: number; key: number }

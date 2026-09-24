@@ -2,7 +2,7 @@
 title: Recipes
 description: Practical patterns for route checks, nearby alerts and keeping a map fresh.
 sidebar:
-  order: 4
+  order: 5
 ---
 
 ## Warn before a boda ride
@@ -85,6 +85,26 @@ async function refresh() {
 setInterval(refresh, 120_000)
 document.addEventListener("visibilitychange", refresh)
 ```
+
+## Search as you type
+
+Query mapped spots on every keystroke, and places (with nearby danger) once the user pauses.
+
+```ts
+let timers: ReturnType<typeof setTimeout>[] = []
+
+function onInput(q: string) {
+  timers.forEach(clearTimeout)
+  if (q.trim().length < 2) return render({ spots: [], places: [] })
+  // Fast: database-only spot search.
+  timers.push(setTimeout(async () => render(await (await fetch(`/api/search?places=0&q=${encodeURIComponent(q)}`)).json()), 120))
+  // Slower: adds places, each with the mapped spots within 2 km.
+  timers.push(setTimeout(async () => render(await (await fetch(`/api/search?q=${encodeURIComponent(q)}`)).json()), 450))
+}
+```
+
+Ignore responses from older queries if a newer one has started, since they can arrive out of
+order.
 
 ## Show which way the user voted
 

@@ -80,14 +80,24 @@ it moves to `pending` and disappears from the map until a moderator decides:
 
 `POST /api/spots/{id}/flag` returns `result: "hidden"` when your flag triggered the auto-hide.
 
+## Search
+
+`GET /api/search` looks in two places at once:
+
+- **Mapped spots**, straight from the database, with fuzzy matching (Postgres `pg_trgm`), so
+  typos like "kalerw" still find Kalerwe.
+- **Places** from OpenStreetMap, cached in the database for 30 days. Each place lists the mapped
+  spots within 2 km, so searching a place that isn't mapped (e.g. "Mulago") still warns about
+  danger nearby (Kalerwe, 1.2 km).
+
 ## Identity
 
 The API has no accounts. Each visitor is identified by
 `sha256(VOTER_SALT | client IP | user agent)`, truncated. This hash:
 
 - enforces **one vote and one flag per spot** per visitor,
-- keys the **rate limits**,
+- keys the per-visitor **rate limits**,
 - is **never returned** by the API or readable through the database's public role.
 
-Because it includes the user agent, a server-side integration that proxies many users through
-one IP should expect them to share limits. See [Errors and limits](/errors-and-limits).
+Report limits also apply per network (IP only), so a server-side integration that proxies many
+users through one IP should expect them to share that limit. See [Rate limits](/rate-limits).

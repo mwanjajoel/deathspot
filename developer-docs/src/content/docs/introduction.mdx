@@ -15,6 +15,7 @@ The same HTTP API that powers the public map is open to developers. You can use 
 - **Report spots** from your own app, bot or form.
 - **Confirm or deny** spots so warnings stay current.
 - **Flag problems** for moderators.
+- **Search** spots and places in real time, with the danger spots near any place.
 - **Check a route** before a trip and list the danger spots along it.
 
 <CardGrid>
@@ -40,7 +41,7 @@ The same HTTP API that powers the public map is open to developers. You can use 
 | **Format** | JSON requests and responses. Send `Content-Type: application/json` on `POST`. |
 | **Authentication** | None. The public API is anonymous. |
 | **Coverage** | Uganda only: latitude −1.6 to 4.3, longitude 29.5 to 35.1 |
-| **Rate limits** | Per visitor, e.g. 5 reports/hour. See [Errors and limits](/errors-and-limits). |
+| **Rate limits** | Per visitor, e.g. 5 reports/hour, with `RateLimit-*` headers. See [Rate limits](/rate-limits). |
 | **Spec** | OpenAPI 3.1 in [`developer-docs/src/api/openapi.yaml`](https://github.com/mwanjajoel/deathspot/blob/main/developer-docs/src/api/openapi.yaml) |
 
 ## Principles

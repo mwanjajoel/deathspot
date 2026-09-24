@@ -121,7 +121,20 @@ and walks through the core calls. You need **Node 20+**, **pnpm** and **Docker**
    Voting the same way twice returns `409`, because each visitor gets one vote per spot. Three
    net confirmations turn a spot `confirmed`. See [Core concepts](/concepts).
 
-5. **Check a route**
+5. **Search**
+
+   Search is fuzzy and real time. Places come back with the mapped spots near them:
+
+   ```sh
+   curl -s "http://localhost:3000/api/search?q=Mulago" \
+     | jq '.places[0] | {name, nearby: [.nearby[] | {title, m: (.distance_m|round)}]}'
+   ```
+
+   ```json
+   { "name": "Mulago", "nearby": [{ "title": "Kalerwe", "m": 1240 }] }
+   ```
+
+6. **Check a route**
 
    Kalerwe to Nansana:
 

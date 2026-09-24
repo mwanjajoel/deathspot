@@ -13,10 +13,11 @@ export default defineConfig({
   socialImageAlt: "Deathspot UG developer documentation",
   sidebar: {
     items: [
-      { label: "Get started", items: ["introduction", "quickstart"] },
-      { label: "Guides", items: ["concepts", "errors-and-limits", "recipes"] },
-      { label: "Contribute", items: ["contributing"] },
-      { label: "API reference", link: "/api" },
+      { label: "Get started", items: ["introduction", "quickstart"], icon: "ph:rocket-launch" },
+      { label: "Guides", items: ["concepts", "errors-and-limits", "rate-limits", "recipes"], icon: "ph:book-open" },
+      { label: "Contribute", items: ["contributing"], icon: "ph:git-pull-request" },
+      // Mounts the generated OpenAPI reference (every tag, operation and schema) in the rail.
+      { label: "API reference", autogenerate: { collection: "api" }, icon: "ph:code", collapsed: false },
     ],
   },
   api: [{ collection: "api", spec: "./src/api/openapi.yaml", label: "Deathspot UG API" }],

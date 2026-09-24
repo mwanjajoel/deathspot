@@ -8,6 +8,8 @@
  */
 import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
 import { ApiSidebar } from "@/components/ui/api-sidebar";
+import { Sidebar } from "@/components/ui/sidebar";
+import { getSidebar } from "@cloudflare/nimbus-docs";
 import { ApiCodeRail } from "@/components/ui/api-code-rail";
 import { Banner } from "@/components/ui/banner";
 import ApiBody from "./ApiBody.astro";
@@ -26,6 +28,13 @@ interface Props {
 }
 
 const { page, nav, collection, version, coordinate } = Astro.props;
+
+// Guides from the docs rail, shown above the endpoint tree so readers can move between the
+// guides and the reference. The rail's own "API reference" group is dropped here because
+// ApiSidebar already renders that tree with method chips.
+const guides = (await getSidebar(Astro.url.pathname, { collection: "docs" })).filter(
+  (item) => !(item.type === "group" && item.label === "API reference"),
+);
 
 const versionStatus =
   collection && version
@@ -62,6 +71,9 @@ if (versionStatus?.isHidden) {
     class="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-border bg-background [scrollbar-color:gray_transparent] [scrollbar-width:thin] md:flex lg:w-(--nb-sidebar-width)"
   >
     <div class="flex-1 pt-8 pb-12 pl-6 pr-4">
+      <Sidebar items={guides} />
+      <div class="my-4 border-t border-border" role="separator"></div>
+      <p class="mb-2 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">API reference</p>
       <ApiSidebar items={nav.items} />
     </div>
     <div class="pointer-events-none sticky bottom-0 h-8 bg-gradient-to-t from-background to-transparent"></div>
@@ -130,6 +142,9 @@ if (versionStatus?.isHidden) {
       </button>
     </div>
     <nav class="px-4 pb-8 pt-5">
+      <Sidebar items={guides} />
+      <div class="my-4 border-t border-border" role="separator"></div>
+      <p class="mb-2 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">API reference</p>
       <ApiSidebar items={nav.items} />
     </nav>
   </div>

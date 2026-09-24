@@ -264,7 +264,7 @@ export function DeathspotApp() {
 
       {/* Top bar */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto flex w-full max-w-xl items-center gap-1 rounded-2xl border bg-background/95 p-1.5 shadow-lg backdrop-blur">
+        <div className="pointer-events-auto relative flex w-full max-w-xl items-center gap-1 rounded-2xl border bg-background/95 p-1.5 shadow-lg backdrop-blur">
           <Link href="/about" className="flex shrink-0 items-center gap-1.5 rounded-xl px-2 py-1.5 hover:bg-muted" aria-label="About Deathspot UG">
             <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
               <SkullIcon className="size-4" />
@@ -273,7 +273,15 @@ export function DeathspotApp() {
               Deathspot<span className="text-primary">UG</span>
             </span>
           </Link>
-          <PlaceSearch className="min-w-0 flex-1" inputClassName="h-10 border-0 bg-muted/60 shadow-none" onSelect={(p) => fly(p, 16)} />
+          <PlaceSearch
+            className="static min-w-0 flex-1"
+            inputClassName="h-10 border-0 bg-muted/60 shadow-none"
+            onSelect={(r) => {
+              const spot = r.kind === "spot" ? spots.find((s) => s.id === r.id) : undefined
+              if (spot) select(spot, true)
+              else fly(r, 16)
+            }}
+          />
           <FiltersPopover value={filters} onChange={setFilters} />
           <Button size="icon-lg" variant="ghost" aria-label="Statistics" onClick={() => setStatsOpen(true)}>
             <BarChart3Icon />

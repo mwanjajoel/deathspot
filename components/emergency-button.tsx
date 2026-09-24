@@ -17,9 +17,9 @@ export function EmergencyButton() {
         <div className="mb-2 text-sm font-semibold">In danger? Call now</div>
         <div className="flex flex-col gap-1.5">
           {EMERGENCY_CONTACTS.map((c) => (
-            <a key={c.number} href={c.href ?? `tel:${c.number}`} className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-accent">
+            <a key={c.number} href={c.href} className="flex items-center justify-between rounded-lg border p-2.5 text-sm hover:bg-accent">
               <span>{c.label}</span>
-              <span className="font-mono font-semibold">{c.number}</span>
+              <span className="font-mono font-semibold whitespace-nowrap">{c.number}</span>
             </a>
           ))}
         </div>

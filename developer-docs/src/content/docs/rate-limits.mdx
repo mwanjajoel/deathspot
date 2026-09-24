@@ -1,0 +1,100 @@
+---
+title: Rate limits
+description: Per-endpoint limits, the RateLimit response headers, and how to handle 429 responses.
+sidebar:
+  order: 4
+---
+
+Rate limits keep the map fair and protect it from spam and scraping. They also keep us within
+the usage policies of the free OpenStreetMap services behind search and routing.
+
+## Limits
+
+Each limit applies to one **visitor** (a salted hash of IP address + user agent) unless marked
+*network* (IP address only). Many phones in Uganda share a carrier IP, so network limits are
+set higher.
+
+| Endpoint | Limit | Window |
+| --- | --- | --- |
+| `POST /api/spots` (report) | 5 per visitor, **and** 30 per network | 1 hour |
+| `POST /api/spots/{id}/vote` | 60 | 1 hour |
+| `POST /api/spots/{id}/flag` | 20 | 1 hour |
+| `GET /api/route` | 20 | 1 minute |
+| `GET /api/search` | 120 | 1 minute |
+| Place lookups that miss the cache (inside `/api/search`) | 30 | 1 minute |
+| `GET /api/spots`, `/api/stats`, `/api/me` (shared) | 120 | 1 minute |
+| Moderator sign-in | 10 attempts per network | 15 minutes |
+| `GET /api/health` | Not limited | |
+
+## Response headers
+
+Every rate-limited response carries the IETF
+[RateLimit header fields](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/):
+
+```http
+HTTP/1.1 200 OK
+RateLimit-Limit: 120
+RateLimit-Remaining: 117
+RateLimit-Reset: 38
+RateLimit-Policy: 120;w=60
+```
+
+| Header | Meaning |
+| --- | --- |
+| `RateLimit-Limit` | Requests allowed in the window |
+| `RateLimit-Remaining` | Requests left |
+| `RateLimit-Reset` | Seconds until the window resets |
+| `RateLimit-Policy` | The policy as `limit;w=window-seconds` |
+| `Retry-After` | Seconds to wait. Sent only with `429`. |
+
+When an endpoint has more than one policy (reports have a visitor and a network limit), the
+headers describe whichever policy is closest to its limit.
+
+## Handling 429
+
+Over the limit, you get `429 Too Many Requests` with a message you can show users:
+
+```json
+{ "error": "You have reported a lot of spots recently. Please try again in an hour." }
+```
+
+Wait for `Retry-After` seconds before retrying. Don't retry in a tight loop, because rejected
+requests still count.
+
+```ts
+async function withBackoff(input: RequestInfo, init?: RequestInit, attempts = 3): Promise<Response> {
+  const res = await fetch(input, init)
+  if (res.status !== 429 || attempts <= 1) return res
+  const wait = Number(res.headers.get("Retry-After") ?? "1")
+  await new Promise((r) => setTimeout(r, wait * 1000))
+  return withBackoff(input, init, attempts - 1)
+}
+```
+
+<Aside type="tip" title="Searching as the user types">
+Call `/api/search?places=0` on each keystroke. That's a database-only spot search well inside
+the 120-per-minute limit. Add places after a short pause (about 450 ms), because only place
+lookups that miss the cache count against the tighter 30-per-minute limit. A throttled place
+lookup still returns `spots` in the `429` body.
+</Aside>
+
+## How it works
+
+- **Shared and durable.** Counters live in Postgres (`public.rate_limits`, updated by the
+  `hit_rate_limit` function), so limits hold across app restarts and multiple app replicas.
+- **Sliding window.** The previous window's count is weighted by how much of it still overlaps
+  the current window. This avoids the double burst a fixed window allows at its boundary.
+- **Private.** Keys are `policy:hash`. Raw IP addresses are never stored, and the table isn't
+  readable through the public API.
+- **Fail-open.** If the database limiter is unreachable, each app instance falls back to an
+  in-memory limiter with the same limits, so the API stays available.
+
+Limits are defined in one place, `RATE_LIMITS` in
+[`lib/rate-limit.ts`](https://github.com/mwanjajoel/deathspot/blob/main/lib/rate-limit.ts). If
+you change them, update this page and the OpenAPI spec in the same pull request.
+
+<Aside type="caution" title="Deploy behind a proxy">
+The client IP comes from `CF-Connecting-IP` or `X-Forwarded-For`. The bundled Caddy proxy
+overwrites these, but if port 3000 is reachable directly, clients can spoof them and dodge
+per-visitor limits. Only expose the app through Caddy or Cloudflare.
+</Aside>

@@ -81,9 +81,18 @@ export function deriveStatus(confirmations: number, denials: number): SpotStatus
   return "unverified"
 }
 
-export const EMERGENCY_CONTACTS: { label: string; number: string; href?: string }[] = [
-  { label: "Police / emergency", number: "999" },
-  { label: "Emergency from mobile", number: "112" },
-  { label: "National Emergency Call Centre", number: "0800199399" },
-  { label: "Police WhatsApp", number: "0779999999", href: "https://wa.me/256779999999" },
+export type EmergencyContact = { label: string; number: string; href: string }
+
+/** Display the number as written; dial it with the phone's call app (tel: links). */
+const contact = (label: string, number: string): EmergencyContact => ({
+  label,
+  number,
+  href: `tel:${number.replace(/[^\d+]/g, "")}`,
+})
+
+export const EMERGENCY_CONTACTS: EmergencyContact[] = [
+  contact("Police / emergency", "999"),
+  contact("Emergency from mobile", "112"),
+  contact("National Emergency Call Centre", "0800 199 399"),
+  contact("Police WhatsApp line", "+256 779 999 999"),
 ]

@@ -1,5 +1,6 @@
 import { getStats } from "@/lib/db"
+import { withRateLimit } from "@/lib/rate-limit"
 
-export async function GET() {
-  return Response.json(await getStats(), { headers: { "Cache-Control": "no-store" } })
-}
+export const GET = withRateLimit("read", async () =>
+  Response.json(await getStats(), { headers: { "Cache-Control": "no-store" } }),
+)

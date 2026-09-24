@@ -1,11 +1,10 @@
-import { NextRequest } from "next/server"
 import { CATEGORY_KEYS, type Category } from "@/lib/categories"
 import { createSpot, listSpots } from "@/lib/db"
-import { rateLimit, voterHash } from "@/lib/rate-limit"
+import { voterHash, withRateLimit } from "@/lib/rate-limit"
 import { newSpotSchema } from "@/lib/validation"
 
-export async function GET(req: NextRequest) {
-  const sp = req.nextUrl.searchParams
+export const GET = withRateLimit("read", async (req: Request) => {
+  const sp = new URL(req.url).searchParams
   const category = sp.get("category")
   const since = Number(sp.get("since"))
   const spots = await listSpots({
@@ -13,24 +12,17 @@ export async function GET(req: NextRequest) {
     sinceDays: since > 0 ? since : undefined,
   })
   return Response.json({ spots }, { headers: { "Cache-Control": "no-store" } })
-}
+})
 
-export async function POST(req: Request) {
-  const hash = voterHash(req)
-  if (!rateLimit(`report:${hash}`, 5, 60 * 60 * 1000)) {
-    return Response.json(
-      { error: "You have reported a lot of spots recently. Please try again in an hour." },
-      { status: 429 },
-    )
-  }
+export const POST = withRateLimit("report", async (req: Request) => {
   const body = await req.json().catch(() => null)
   const parsed = newSpotSchema.safeParse(body)
   if (!parsed.success) {
     return Response.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid report", issues: parsed.error.issues },
+      { error: parsed.error.issues[0].message, issues: parsed.error.issues },
       { status: 400 },
     )
   }
-  const { spot, pending } = await createSpot(parsed.data, hash)
+  const { spot, pending } = await createSpot(parsed.data, voterHash(req))
   return Response.json({ spot, pending }, { status: 201 })
-}
+})

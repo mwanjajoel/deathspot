@@ -31,29 +31,14 @@ Validation failures on `POST /api/spots` also include `issues`, in
 | `400` | Invalid input: bad JSON, a missing field, out-of-range values, or a location outside Uganda | Fix the request. Don't retry unchanged. |
 | `404` | The spot doesn't exist or isn't public (pending or rejected) | Refresh your spot list. |
 | `409` | Already voted this way, or already flagged | Treat it as success in your UI. |
-| `429` | Rate limit reached | Back off. See the limits below. |
-| `502` | An upstream service (OSRM routing or Nominatim search) is unavailable | Retry later with backoff. |
+| `429` | Rate limit reached | Wait `Retry-After` seconds. See [Rate limits](/rate-limits). |
+| `502` | The routing service (OSRM) is unavailable | Retry later with backoff. Search degrades instead: it returns spots with an `error` note. |
 | `503` | The health check can't reach the database | Check the deployment. |
 
 ## Rate limits
 
-Limits apply per visitor (see [Identity](/concepts#identity)) over a sliding window:
-
-| Action | Endpoint | Limit |
-| --- | --- | --- |
-| Report a spot | `POST /api/spots` | 5 per hour |
-| Vote | `POST /api/spots/{id}/vote` | 60 per hour |
-| Flag | `POST /api/spots/{id}/flag` | 20 per hour |
-| Search places | `GET /api/geocode` | 30 per minute |
-
-Reads (`GET /api/spots`, `/api/stats`, `/api/route`, `/api/me`) aren't rate limited by the app,
-but please cache them. The public map refreshes spots every two minutes.
-
-<Aside type="note">
-Limits are kept in each app instance's memory, so they reset when the app restarts, and each
-replica counts separately. Distributed rate limiting is on the
-[roadmap](https://github.com/mwanjajoel/deathspot#roadmap).
-</Aside>
+Every endpoint except `/api/health` is rate limited, and responses carry `RateLimit-*` headers.
+See [Rate limits](/rate-limits) for the limits per endpoint and how to back off.
 
 ## Validation rules
 
@@ -70,10 +55,3 @@ replica counts separately. Distributed rate limiting is on the
 | `note` (flags) | Up to 300 characters |
 
 Phone numbers in `title`, `description`, `area` and flag notes are replaced with `[removed]`.
-
-## Behind a proxy
-
-The app reads the client IP from `CF-Connecting-IP`, then `X-Forwarded-For`. The bundled Caddy
-proxy overwrites `X-Forwarded-For`, so production deployments should always sit behind it (or
-Cloudflare). If port 3000 is exposed directly, clients can spoof the header to dodge
-one-vote-per-spot and rate limits.

@@ -14,6 +14,9 @@ info:
     - **JSON in, JSON out.** Send `Content-Type: application/json` on every `POST`.
     - **Uganda only.** Coordinates must fall inside Uganda's bounding box
       (latitude −1.6 to 4.3, longitude 29.5 to 35.1).
+    - **Rate limited.** Every endpoint returns `RateLimit-Limit`, `RateLimit-Remaining`,
+      `RateLimit-Reset` and `RateLimit-Policy` headers, and `429` with `Retry-After` when you're
+      over a limit. See the Rate limits guide.
     - **Places, not people.** Reports describe locations. Phone numbers in free text are replaced
       with `[removed]`, and moderators delete anything that names or accuses a person.
 
@@ -38,7 +41,7 @@ tags:
   - name: Routing
     description: Check a journey for reported danger spots.
   - name: Search
-    description: Find places in Uganda.
+    description: Real-time search over mapped spots and places, with the danger spots near each place.
   - name: Insights
     description: Aggregate statistics and the caller's own state.
   - name: System
@@ -57,6 +60,8 @@ paths:
 
         The list is small enough to fetch in full; filter on the client for anything the query
         parameters don't cover. The public map refreshes it every two minutes.
+
+        Rate limit: **120 requests per minute** per visitor (shared with `/api/stats` and `/api/me`).
       parameters:
         - name: category
           in: query
@@ -73,6 +78,15 @@ paths:
       responses:
         "200":
           description: The approved spots.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -105,6 +119,8 @@ paths:
                     seeded: true
         "500":
           $ref: "#/components/responses/ServerError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
     post:
       tags: [Spots]
       operationId: reportSpot
@@ -120,7 +136,8 @@ paths:
         - **Held for review:** the spot waits for a moderator and `pending` is `true`. It won't
           appear in `GET /api/spots` until it's approved.
 
-        Rate limit: **5 reports per hour** per visitor.
+        Rate limits: **5 reports per hour** per visitor, and **30 per hour** per network (IP
+        address), since many phones share a carrier IP.
       requestBody:
         required: true
         content:
@@ -141,6 +158,15 @@ paths:
       responses:
         "201":
           description: The spot was saved.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -231,6 +257,15 @@ paths:
       responses:
         "200":
           description: The vote was recorded. Returns the updated spot.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -301,6 +336,15 @@ paths:
       responses:
         "200":
           description: The flag was recorded.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -351,6 +395,8 @@ paths:
 
         Routes are sorted **safest first**: by `risk` (the sum of the severities of the spots
         along the route), then by duration.
+
+        Rate limit: **20 route checks per minute** per visitor.
       parameters:
         - name: from
           in: query
@@ -371,6 +417,15 @@ paths:
       responses:
         "200":
           description: One or more routes, safest first.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -409,56 +464,106 @@ paths:
                 $ref: "#/components/schemas/Error"
               example:
                 error: Routing service unavailable
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
-  /api/geocode:
+  /api/search:
     get:
       tags: [Search]
-      operationId: searchPlaces
-      summary: Search for a place
+      operationId: search
+      summary: Search spots and places
       description: |
-        Looks up places in Uganda by name through OpenStreetMap Nominatim and returns up to six
-        matches. Queries shorter than two characters return an empty list.
+        Real-time search over the map, backed by Postgres:
 
-        Rate limit: **30 searches per minute** per visitor. Debounce search-as-you-type input;
-        Nominatim's usage policy allows about one request per second.
+        - **`spots`**: mapped danger spots whose title, area or description matches `q`. Matching
+          is fuzzy (pg_trgm), so typos like `kalerw` or `nansna` still match, and prefix and
+          substring hits rank first.
+        - **`places`**: places in Uganda matching `q` (from OpenStreetMap Nominatim, cached in the
+          database for 30 days), each with the mapped spots within **2 km** (`nearby`). Places
+          near mapped spots are listed first. This is how a search for "Mulago" surfaces the
+          Kalerwe spot 1.2 km away.
+
+        For search-as-you-type, call with `places=0` on every keystroke (spots only, typically
+        under 20 ms) and without it after a short pause.
+
+        Rate limits: **120 searches per minute**, and **30 uncached place lookups per minute**.
+        When only the place lookup is throttled, the response is `429` but still contains the
+        matching `spots`.
       parameters:
         - name: q
           in: query
           required: true
-          description: Place name, e.g. a neighbourhood, landmark or road.
+          description: Search text, 2–100 characters. Shorter queries return empty results.
           schema:
             type: string
             minLength: 2
-            example: Kalerwe
+            maxLength: 100
+            example: Mulago
+        - name: places
+          in: query
+          description: Send `0` to skip place lookup and return mapped spots only. Places also need `q` of 3+ characters.
+          schema:
+            type: string
+            enum: ["0", "1"]
+            default: "1"
       responses:
         "200":
-          description: Matching places.
+          description: Matching spots and places.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
-                type: object
-                required: [places]
-                properties:
-                  places:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Place"
+                $ref: "#/components/schemas/SearchResults"
               example:
+                spots: []
                 places:
-                  - name: Kalerwe
-                    detail: Kampala, Central Region, Uganda
-                    lat: 0.3491751
-                    lng: 32.5719532
+                  - name: Mulago
+                    detail: Kawempe, Kampala, Central Region
+                    lat: 0.3408
+                    lng: 32.5794
+                    nearby:
+                      - id: 7
+                        title: Kalerwe
+                        area: Kawempe
+                        category: boda_gang
+                        severity: 5
+                        status: confirmed
+                        moderator_verified: false
+                        lat: 0.34918
+                        lng: 32.57195
+                        distance_m: 1240
         "429":
-          $ref: "#/components/responses/RateLimited"
-        "502":
-          description: Nominatim is unavailable.
+          description: Too many searches, or too many uncached place lookups. In the second case `spots` is still returned.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
+            Retry-After:
+              $ref: "#/components/headers/Retry-After"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                allOf:
+                  - $ref: "#/components/schemas/SearchResults"
+                  - $ref: "#/components/schemas/Error"
               example:
-                error: Search unavailable
+                spots:
+                  - { id: 7, title: Kalerwe, area: Kawempe, category: boda_gang, severity: 5, status: confirmed, moderator_verified: false, lat: 0.34918, lng: 32.57195, score: 1.8 }
+                places: []
+                error: Too many place searches. Wait a minute and try again.
 
   /api/stats:
     get:
@@ -469,6 +574,15 @@ paths:
       responses:
         "200":
           description: Statistics.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -495,6 +609,8 @@ paths:
                     max_severity: 3
         "500":
           $ref: "#/components/responses/ServerError"
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/me:
     get:
@@ -507,6 +623,15 @@ paths:
       responses:
         "200":
           description: The caller's state.
+          headers:
+            RateLimit-Limit:
+              $ref: "#/components/headers/RateLimit-Limit"
+            RateLimit-Remaining:
+              $ref: "#/components/headers/RateLimit-Remaining"
+            RateLimit-Reset:
+              $ref: "#/components/headers/RateLimit-Reset"
+            RateLimit-Policy:
+              $ref: "#/components/headers/RateLimit-Policy"
           content:
             application/json:
               schema:
@@ -527,6 +652,8 @@ paths:
                   "1": 1
                   "8": -1
                 requireApproval: false
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
   /api/health:
     get:
@@ -576,9 +703,47 @@ components:
         type: integer
         example: 1
 
+  headers:
+    RateLimit-Limit:
+      description: Requests allowed in the current window for the policy closest to its limit.
+      schema:
+        type: integer
+        example: 120
+    RateLimit-Remaining:
+      description: Requests left in the current window. Estimated with a sliding-window counter.
+      schema:
+        type: integer
+        example: 119
+    RateLimit-Reset:
+      description: Seconds until the current window resets.
+      schema:
+        type: integer
+        example: 42
+    RateLimit-Policy:
+      description: The applied policy as `<limit>;w=<window seconds>`, e.g. `5;w=3600` for 5 an hour.
+      schema:
+        type: string
+        example: 120;w=60
+    Retry-After:
+      description: Seconds to wait before retrying. Sent only with `429`.
+      schema:
+        type: integer
+        example: 42
+
   responses:
     RateLimited:
-      description: The caller exceeded a rate limit. Try again later.
+      description: The caller exceeded a rate limit. Wait `Retry-After` seconds before retrying.
+      headers:
+        RateLimit-Limit:
+          $ref: "#/components/headers/RateLimit-Limit"
+        RateLimit-Remaining:
+          $ref: "#/components/headers/RateLimit-Remaining"
+        RateLimit-Reset:
+          $ref: "#/components/headers/RateLimit-Reset"
+        RateLimit-Policy:
+          $ref: "#/components/headers/RateLimit-Policy"
+        Retry-After:
+          $ref: "#/components/headers/Retry-After"
       content:
         application/json:
           schema:
@@ -760,23 +925,98 @@ components:
           maxLength: 300
           description: An `http` or `https` link. Send `""` or `null` for none.
 
-    Place:
+    SpotSummary:
       type: object
-      required: [name, detail, lat, lng]
+      description: The fields of a spot needed to show it in search results.
+      required: [id, title, area, category, severity, status, moderator_verified, lat, lng]
       properties:
-        name:
+        id:
+          type: integer
+        title:
           type: string
-          example: Kalerwe
-        detail:
+        area:
           type: string
-          description: Up to three levels of administrative context.
-          example: Kampala, Central Region, Uganda
+        category:
+          $ref: "#/components/schemas/Category"
+        severity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        status:
+          $ref: "#/components/schemas/SpotStatus"
+        moderator_verified:
+          type: boolean
         lat:
           type: number
           format: double
         lng:
           type: number
           format: double
+
+    SpotHit:
+      description: A mapped spot matching the search text.
+      allOf:
+        - $ref: "#/components/schemas/SpotSummary"
+        - type: object
+          required: [score]
+          properties:
+            score:
+              type: number
+              description: Relevance. Higher is better; only matches above 0.5 are returned.
+              example: 1.8
+
+    NearbySpot:
+      description: A mapped spot near a searched place.
+      allOf:
+        - $ref: "#/components/schemas/SpotSummary"
+        - type: object
+          required: [distance_m]
+          properties:
+            distance_m:
+              type: number
+              description: Distance from the place in metres (at most 2000).
+              example: 1240
+
+    Place:
+      type: object
+      required: [name, detail, lat, lng, nearby]
+      properties:
+        name:
+          type: string
+          example: Mulago
+        detail:
+          type: string
+          description: Up to three levels of administrative context.
+          example: Kawempe, Kampala, Central Region
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        nearby:
+          type: array
+          description: Up to 5 mapped spots within 2 km, nearest first.
+          items:
+            $ref: "#/components/schemas/NearbySpot"
+
+    SearchResults:
+      type: object
+      required: [spots, places]
+      properties:
+        spots:
+          type: array
+          description: Up to 8 matching mapped spots, best first.
+          items:
+            $ref: "#/components/schemas/SpotHit"
+        places:
+          type: array
+          description: Matching places, those near mapped spots first.
+          items:
+            $ref: "#/components/schemas/Place"
+        error:
+          type: string
+          description: Set when place search was skipped, e.g. the geocoder is unavailable.
 
     LatLng:
       type: object

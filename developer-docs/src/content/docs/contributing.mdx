@@ -2,7 +2,7 @@
 title: Contributing to the API
 description: How to add or change an endpoint and keep these docs in sync.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 The API reference on this site is generated from one OpenAPI file,
@@ -17,7 +17,9 @@ The API reference on this site is generated from one OpenAPI file,
 | Input validation | `lib/validation.ts` (zod) |
 | Data access | `lib/db.ts` (supabase-js) |
 | Database schema, RLS and functions | `supabase/migrations/*.sql` |
-| Rate limits and visitor hashing | `lib/rate-limit.ts` |
+| Rate limits and visitor hashing | `lib/rate-limit.ts` (`RATE_LIMITS`) |
+| Search (spots, places, nearby) | `lib/search.ts` |
+| Tests | `test/unit/`, `test/integration/` (Vitest) |
 | API spec | `developer-docs/src/api/openapi.yaml` |
 | Guides (this site) | `developer-docs/src/content/docs/*.mdx` |
 
@@ -30,12 +32,21 @@ The API reference on this site is generated from one OpenAPI file,
 2. **Write to the database through a Postgres function**, not a direct table write. Public
    writes use `security definer` functions that only the `service_role` can execute. Add them
    in a **new** numbered migration; never edit an applied one.
-3. **Rate-limit** anything that writes, keyed on `voterHash(req)`.
+3. **Rate-limit** the handler by wrapping it: `export const GET = withRateLimit("read", async (req) => …)`.
+   Add a policy to `RATE_LIMITS` if none fits, and document it in [Rate limits](/rate-limits).
 4. **Return errors as `{ "error": string }`** with the right status code (see
    [Errors and limits](/errors-and-limits)).
 5. **Document it** in `openapi.yaml`: summary, description, parameters, request body, and every
    response with an example. Reuse `components/schemas` and `components/responses`.
-6. **Preview the docs** and check the generated page and code samples:
+6. **Test it.** Add unit tests for pure logic and failure branches, and integration tests that
+   call the route handler against the local stack. Coverage must stay at 100%:
+
+   ```sh
+   pnpm supabase:up
+   pnpm test:coverage
+   ```
+
+7. **Preview the docs** and check the generated page and code samples:
 
    ```sh
    cd developer-docs

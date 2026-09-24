@@ -13,7 +13,11 @@
     "supabase:down": "docker compose down",
     "docs:install": "pnpm --dir developer-docs install",
     "docs:dev": "pnpm --dir developer-docs dev",
-    "docs:build": "pnpm --dir developer-docs build"
+    "docs:build": "pnpm --dir developer-docs build",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -47,10 +51,12 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   },
   "packageManager": "pnpm@11.24.0",
   "engines": {

@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server"
 import { listSpots } from "@/lib/db"
 import { distanceToPolyline, inUganda, type LatLng } from "@/lib/geo"
+import { withRateLimit } from "@/lib/rate-limit"
 
 /** Spots closer than this to the route are flagged. */
 const DANGER_BUFFER_M = 150
@@ -10,9 +10,10 @@ function parse(v: string | null): LatLng | null {
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null
 }
 
-export async function GET(req: NextRequest) {
-  const from = parse(req.nextUrl.searchParams.get("from"))
-  const to = parse(req.nextUrl.searchParams.get("to"))
+export const GET = withRateLimit("route", async (req: Request) => {
+  const sp = new URL(req.url).searchParams
+  const from = parse(sp.get("from"))
+  const to = parse(sp.get("to"))
   if (!from || !to || !inUganda(from) || !inUganda(to)) {
     return Response.json({ error: "from and to must be lat,lng points inside Uganda" }, { status: 400 })
   }
@@ -40,4 +41,4 @@ export async function GET(req: NextRequest) {
   // Safest first; when risk is equal, the faster route wins.
   routes.sort((a, b) => a.risk - b.risk || a.duration - b.duration)
   return Response.json({ routes, bufferMeters: DANGER_BUFFER_M })
-}
+})
