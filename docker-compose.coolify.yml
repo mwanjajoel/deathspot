@@ -208,6 +208,27 @@ services:
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
 
+  # Daily encrypted pg_dump to Cloudflare R2 (docker/backup/backup.sh). Idles until the R2_*
+  # variables are set. Restore: docker compose exec backup backup.sh restore <yyyy/mm/file>
+  backup:
+    build: ./docker/backup
+    image: deathspot-backup:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGDATABASE: ${POSTGRES_DB}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
+      BACKUP_HOUR: ${BACKUP_HOUR:-1}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
 
 volumes:
   db-data:

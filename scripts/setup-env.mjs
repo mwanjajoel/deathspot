@@ -37,6 +37,7 @@ const values = {
   PG_META_CRYPTO_KEY: secret(32),
   VOTER_SALT: secret(24),
   ADMIN_PASSWORD: secret(9),
+  BACKUP_ENCRYPTION_KEY: secret(32),
 }
 
 let env = readFileSync(".env.example", "utf8")
