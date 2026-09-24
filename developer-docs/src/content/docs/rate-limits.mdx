@@ -94,7 +94,9 @@ Limits are defined in one place, `RATE_LIMITS` in
 you change them, update this page and the OpenAPI spec in the same pull request.
 
 <Aside type="caution" title="Deploy behind a proxy">
-The client IP comes from `CF-Connecting-IP` or `X-Forwarded-For`. The bundled Caddy proxy
-overwrites these, but if port 3000 is reachable directly, clients can spoof them and dodge
-per-visitor limits. Only expose the app through Caddy or Cloudflare.
+The client IP comes from `X-Forwarded-For`, which the reverse proxy (Caddy, or Traefik on
+Coolify) overwrites. `CF-Connecting-IP` is used only when the proxy's peer is a Cloudflare edge
+address, so sending it straight to the origin changes nothing. If port 3000 is reachable
+directly, clients can spoof `X-Forwarded-For` and dodge per-visitor limits, so only expose the
+app through a proxy.
 </Aside>

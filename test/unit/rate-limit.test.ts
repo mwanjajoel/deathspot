@@ -15,18 +15,27 @@ const headers = (h: Record<string, string> = {}) => new Headers({ "user-agent": 
 const row = (allowed: boolean, remaining: number, reset_seconds = 30) => ({ data: [{ allowed, remaining, reset_seconds }], error: null })
 
 describe("visitor identity", () => {
-  it("hashes IP + user agent, preferring CF-Connecting-IP, then X-Forwarded-For, then X-Real-IP", () => {
+  it("hashes IP + user agent, preferring X-Forwarded-For, then X-Real-IP", () => {
     const base = rl.visitorHash(headers())
     expect(base).toMatch(/^[0-9a-f]{32}$/)
     expect(rl.visitorHash(headers({ "x-real-ip": "1.1.1.1" }))).not.toBe(base)
     expect(rl.visitorHash(headers({ "x-forwarded-for": "2.2.2.2, 10.0.0.1", "x-real-ip": "1.1.1.1" }))).toBe(
       rl.visitorHash(headers({ "x-forwarded-for": "2.2.2.2" })),
     )
-    expect(rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3", "x-forwarded-for": "2.2.2.2" }))).toBe(
-      rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3" })),
-    )
+    expect(rl.visitorHash(headers({ "x-forwarded-for": " , " }))).toBe(base)
     expect(rl.visitorHash(new Headers())).not.toBe(base)
     expect(rl.voterHash(new Request("http://x", { headers: headers() }))).toBe(base)
+  })
+
+  it("believes CF-Connecting-IP only when the proxy's peer is a Cloudflare edge address", () => {
+    const client = rl.visitorHash(headers({ "x-forwarded-for": "3.3.3.3" }))
+    expect(rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3", "x-forwarded-for": "172.70.1.2" }))).toBe(client)
+    expect(rl.visitorHash(headers({ "cf-connecting-ip": " 3.3.3.3 ", "x-forwarded-for": "9.9.9.9, 2606:4700::1" }))).toBe(client)
+    // Sent straight to the origin: the peer isn't Cloudflare, so the header is ignored.
+    expect(rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3", "x-forwarded-for": "5.5.5.5" }))).toBe(
+      rl.visitorHash(headers({ "x-forwarded-for": "5.5.5.5" })),
+    )
+    expect(rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3" }))).toBe(rl.visitorHash(headers()))
   })
 })
 

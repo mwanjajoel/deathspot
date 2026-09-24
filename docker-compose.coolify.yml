@@ -1,15 +1,13 @@
-# Deathspot UG: the app plus a self-hosted Supabase backend.
+# Deathspot UG on Coolify (https://coolify.io): the same stack as docker-compose.yml, minus the
+# host port mappings and Caddy. Coolify's Traefik proxy terminates HTTPS and routes to the
+# containers, so nothing here binds a host port.
 #
-#   First run:     pnpm setup:env          (or: node scripts/setup-env.mjs) to generate .env
-#   Start:         docker compose up -d --build
-#   With HTTPS:    docker compose --profile https up -d --build   (set APP_DOMAIN / SUPABASE_DOMAIN)
-#   Backend only:  docker compose up -d db auth rest meta studio api-gw   (then `pnpm dev`)
-#   Logs:          docker compose logs -f app
-#
-# The Supabase services follow the official self-hosting setup
-# (https://github.com/supabase/supabase/tree/master/docker), trimmed to what the app uses:
-# Postgres, Auth (moderator logins), PostgREST, the Envoy API gateway, and Studio + postgres-meta
-# for the Supabase dashboard. Add realtime/storage/functions from upstream if you need them.
+# In Coolify: New resource > Docker Compose (from this repository), set the compose file to
+# /docker-compose.coolify.yml, then assign domains:
+#   app     https://deathspot.org:3000
+#   api-gw  https://supabase.deathspot.org:8000   (optional: Supabase Studio + auth/rest APIs)
+# and paste the variables from `node scripts/setup-env.mjs --out .env.production`.
+# Generated from docker-compose.yml; keep the two in step.
 
 name: deathspot
 
@@ -23,8 +21,6 @@ services:
         condition: service_healthy
       api-gw:
         condition: service_healthy
-    ports:
-      - ${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000
     environment:
       # Internal URLs: the browser never talks to Supabase directly.
       SUPABASE_URL: http://api-gw:8000
@@ -46,9 +42,6 @@ services:
   db:
     image: supabase/postgres:17.6.1.136
     restart: unless-stopped
-    ports:
-      # Bound to localhost only: for backups, psql and `pnpm dev`. Never expose publicly.
-      - 127.0.0.1:${POSTGRES_EXPOSE_PORT:-55432}:5432
     volumes:
       - ./docker/supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
       - ./docker/supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
@@ -201,8 +194,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    ports:
-      - ${API_GW_BIND:-127.0.0.1}:${API_GW_HTTP_PORT:-8000}:8000/tcp
     volumes:
       - ./docker/supabase/api/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./docker/supabase/api/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
@@ -220,31 +211,7 @@ services:
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
     entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
 
-  # Optional automatic HTTPS (Let's Encrypt) for a VPS: `docker compose --profile https up -d`.
-  # Point APP_DOMAIN (and SUPABASE_DOMAIN for the dashboard) at this server first.
-  caddy:
-    image: caddy:2.10-alpine
-    profiles: [https]
-    restart: unless-stopped
-    depends_on: [app, api-gw]
-    ports:
-      - 80:80
-      - 443:443
-      - 443:443/udp
-    environment:
-      APP_DOMAIN: ${APP_DOMAIN:-localhost}
-      SUPABASE_DOMAIN: ${SUPABASE_DOMAIN:-supabase.localhost}
-      ACME_EMAIL: ${ACME_EMAIL:-}
-    volumes:
-      # CADDYFILE=Caddyfile.cloudflare behind the Cloudflare proxy (Origin CA certificate in
-      # docker/caddy/certs); the default Caddyfile gets Let's Encrypt certificates itself.
-      - ./docker/caddy/${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
-      - ./docker/caddy/certs:/certs:ro
-      - caddy-data:/data
-      - caddy-config:/config
 
 volumes:
   db-data:
   db-config:
-  caddy-data:
-  caddy-config:

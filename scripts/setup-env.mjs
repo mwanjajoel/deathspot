@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 // Creates .env from .env.example with fresh random secrets and Supabase API keys
-// (HS256 JWTs signed with JWT_SECRET). Usage: node scripts/setup-env.mjs [--force]
+// (HS256 JWTs signed with JWT_SECRET).
+// Usage: node scripts/setup-env.mjs [--force] [--out <file>]   (default file: .env)
 import { createHmac, randomBytes } from "node:crypto"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 
 const force = process.argv.includes("--force")
-if (existsSync(".env") && !force) {
-  console.error(".env already exists. Re-run with --force to overwrite it (this rotates every secret).")
+const outIndex = process.argv.indexOf("--out")
+const out = outIndex > 0 ? process.argv[outIndex + 1] : ".env"
+if (existsSync(out) && !force) {
+  console.error(`${out} already exists. Re-run with --force to overwrite it (this rotates every secret).`)
   process.exit(1)
 }
 
@@ -43,8 +46,8 @@ for (const [k, v] of Object.entries(values)) {
 // Resolve ${VAR} references so the file works for tools that don't expand variables.
 env = env.replace(/\$\{(\w+)\}/g, (m, k) => values[k] ?? m)
 
-writeFileSync(".env", env, { mode: 0o600 })
-console.log("Wrote .env with fresh secrets.\n")
+writeFileSync(out, env, { mode: 0o600 })
+console.log(`Wrote ${out} with fresh secrets.\n`)
 console.log(`  First admin:     ${/^ADMIN_EMAIL=(.*)$/m.exec(env)[1]} / ${values.ADMIN_PASSWORD}`)
 console.log(`  Studio login:    supabase / ${values.DASHBOARD_PASSWORD}  (http://localhost:8000)`)
-console.log("\nEdit ADMIN_EMAIL, SITE_URL and the domains in .env before deploying.")
+console.log(`\nEdit ADMIN_EMAIL, SITE_URL and the domains in ${out} before deploying.`)

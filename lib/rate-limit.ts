@@ -1,5 +1,6 @@
 import "server-only"
 import { createHash } from "node:crypto"
+import { isCloudflareIp } from "./cloudflare"
 import { serviceClient } from "./supabase/server"
 
 const SALT = process.env.VOTER_SALT ?? "deathspot-ug-dev-salt"
@@ -7,17 +8,17 @@ const SALT = process.env.VOTER_SALT ?? "deathspot-ug-dev-salt"
 const sha = (s: string) => createHash("sha256").update(`${SALT}|${s}`).digest("hex").slice(0, 32)
 
 /**
- * The client IP. Behind Caddy (the https profile) X-Forwarded-For is overwritten with the real
- * client address, and Cloudflare sets CF-Connecting-IP. If the app is exposed directly, clients
- * can spoof these headers, so production deployments should sit behind one of those proxies.
+ * The client IP. The reverse proxy in front of the app (Caddy, or Coolify's Traefik) overwrites
+ * X-Forwarded-For, so its last hop is the peer that connected to the proxy. CF-Connecting-IP is
+ * only believed when that peer is Cloudflare: the origin may also be reachable directly, and then
+ * anyone could send the header. If the app itself is exposed without a proxy, clients can spoof
+ * X-Forwarded-For too, so production deployments should always sit behind one.
  */
 function clientIp(headers: Headers) {
-  return (
-    headers.get("cf-connecting-ip") ??
-    headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    headers.get("x-real-ip") ??
-    "local"
-  )
+  const hops = (headers.get("x-forwarded-for") ?? "").split(",").map((h) => h.trim()).filter(Boolean)
+  const cf = headers.get("cf-connecting-ip")?.trim()
+  if (cf && hops.length && isCloudflareIp(hops[hops.length - 1])) return cf
+  return hops[0] ?? headers.get("x-real-ip") ?? "local"
 }
 
 /** Anonymous, non-reversible id for a visitor (IP + user agent). No raw IPs are stored. */

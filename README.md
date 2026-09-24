@@ -253,7 +253,18 @@ docker compose --profile https up -d --build
 docker compose logs -f app          # wait for "[bootstrap] ready"
 ```
 
-Open only ports 22, 80 and 443. Postgres (55432) and the gateway (8000) listen on localhost only. Keep the app behind Caddy or Cloudflare: visitor identity comes from `CF-Connecting-IP` / `X-Forwarded-For`, which clients can spoof if port 3000 is exposed directly.
+Open only ports 22, 80 and 443. Postgres (55432) and the gateway (8000) listen on localhost only. Keep the app behind a reverse proxy (Caddy, or Traefik on Coolify): visitor identity comes from `X-Forwarded-For`, which clients can spoof if port 3000 is exposed directly. `CF-Connecting-IP` is only trusted when the request reached the proxy from a Cloudflare edge address.
+
+**Behind the Cloudflare proxy (orange cloud):** set `CADDYFILE=Caddyfile.cloudflare` and run the helpers in `scripts/deploy/`. `server-setup.sh` installs Docker and limits ports 80/443 to Cloudflare, `cloudflare-setup.sh` creates the DNS records and an Origin CA certificate, and `deploy.sh` syncs and starts the stack.
+
+### Deploy on Coolify
+
+If the server already runs [Coolify](https://coolify.io), use `docker-compose.coolify.yml`. It is the same stack without host ports or Caddy; Coolify's Traefik handles HTTPS.
+
+1. New resource > Docker Compose, from this repository, with compose file `/docker-compose.coolify.yml`.
+2. Paste the variables from `node scripts/setup-env.mjs --out .env.production`, with `SITE_URL`, `SUPABASE_PUBLIC_URL` and `API_EXTERNAL_URL` set to your domains as in the table above.
+3. Domains: `app` → `https://deathspot.org:3000`, and optionally `api-gw` → `https://supabase.deathspot.org:8000` for Studio.
+4. Deploy. With Cloudflare in front, set SSL/TLS to **Full (strict)** once Let's Encrypt has issued the certificates.
 
 ### Operations
 
