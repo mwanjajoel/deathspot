@@ -65,7 +65,7 @@ services:
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
 
   auth:
-    image: supabase/gotrue:v2.196.0
+    image: supabase/gotrue:v2.197.0
     restart: unless-stopped
     depends_on:
       db:
