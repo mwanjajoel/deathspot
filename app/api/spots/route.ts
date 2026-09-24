@@ -8,11 +8,11 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const category = sp.get("category")
   const since = Number(sp.get("since"))
-  const spots = listSpots({
+  const spots = await listSpots({
     category: CATEGORY_KEYS.includes(category as Category) ? (category as Category) : undefined,
     sinceDays: since > 0 ? since : undefined,
   })
-  return Response.json({ spots })
+  return Response.json({ spots }, { headers: { "Cache-Control": "no-store" } })
 }
 
 export async function POST(req: Request) {
@@ -31,6 +31,6 @@ export async function POST(req: Request) {
       { status: 400 },
     )
   }
-  const spot = createSpot(parsed.data, hash)
-  return Response.json({ spot }, { status: 201 })
+  const { spot, pending } = await createSpot(parsed.data, hash)
+  return Response.json({ spot, pending }, { status: 201 })
 }

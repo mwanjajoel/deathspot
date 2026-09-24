@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "No route found" }, { status: 404 })
   }
 
-  const spots = listSpots().filter((s) => s.status !== "disputed")
+  const spots = (await listSpots()).filter((s) => s.status !== "disputed")
   const routes = data.routes.map((r) => {
     const line = r.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }))
     const dangers = spots

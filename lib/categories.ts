@@ -43,8 +43,30 @@ export type Spot = {
   confirmations: number
   denials: number
   status: SpotStatus
+  moderator_verified: boolean
   seeded: boolean
 }
+
+export type Moderation = "pending" | "approved" | "rejected"
+
+/** What moderators see in addition to the public fields. */
+export type AdminSpot = Spot & {
+  moderation: Moderation
+  flag_count: number
+  updated_at: string
+  moderated_at: string | null
+  moderation_note: string | null
+}
+
+export const FLAG_REASONS = {
+  inaccurate: "Wrong location or details",
+  names_person: "Names or accuses a person",
+  duplicate: "Duplicate of another spot",
+  abusive: "Abusive or fake",
+  resolved: "No longer dangerous",
+  other: "Something else",
+} as const
+export type FlagReason = keyof typeof FLAG_REASONS
 
 /** Severity 1–5 → marker colour, from amber up to deep red. */
 export function severityColor(severity: number) {

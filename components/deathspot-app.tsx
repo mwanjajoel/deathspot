@@ -4,13 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { BarChart3Icon, BellOffIcon, BellRingIcon, FlameIcon, InfoIcon, LocateFixedIcon, MapPinnedIcon, MoonIcon, NavigationIcon, PlusIcon, SkullIcon, SunIcon, XIcon } from "lucide-react"
+import { BarChart3Icon, BellOffIcon, BellRingIcon, FlameIcon, InfoIcon, LocateFixedIcon, MapPinnedIcon, MenuIcon, MoonIcon, NavigationIcon, PlusIcon, ShieldIcon, SkullIcon, SunIcon, XIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { EmergencyButton } from "@/components/emergency-button"
 import { DEFAULT_FILTERS, FiltersPopover, applyFilters, type Filters } from "@/components/filters"
+import { FlagForm } from "@/components/flag-form"
 import { PlaceSearch } from "@/components/place-search"
 import { ReportForm } from "@/components/report-form"
 import { ResponsiveModal } from "@/components/responsive-modal"
@@ -73,6 +75,8 @@ export function DeathspotApp() {
   const [statsOpen, setStatsOpen] = useState(false)
   const [statsKey, setStatsKey] = useState(0)
   const [flyTo, setFlyTo] = useState<FlyTarget | null>(null)
+  const [requireApproval, setRequireApproval] = useState(false)
+  const [flagging, setFlagging] = useState<Spot | null>(null)
   const alerted = useRef(new Set<number>())
 
   const visible = useMemo(() => applyFilters(spots, filters), [spots, filters])
@@ -98,6 +102,7 @@ export function DeathspotApp() {
       .then(([s, m]) => {
         setSpots(s.spots)
         setMyVotes(m.votes)
+        setRequireApproval(m.requireApproval)
         const id = Number(new URLSearchParams(window.location.search).get("spot"))
         const deep = (s.spots as Spot[]).find((x) => x.id === id)
         if (deep) {
@@ -107,6 +112,23 @@ export function DeathspotApp() {
       })
       .catch(() => toast.error("Could not load danger spots. Check your connection."))
       .finally(() => setLoaded(true))
+  }, [])
+
+  // Keep the map fresh: new reports and moderator decisions appear without a reload.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return
+      fetch("/api/spots")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setSpots(d.spots))
+        .catch(() => {})
+    }
+    const id = setInterval(refresh, 120_000)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", refresh)
+    }
   }, [])
 
   const requestLocation = useCallback(
@@ -256,15 +278,32 @@ export function DeathspotApp() {
           <Button size="icon-lg" variant="ghost" aria-label="Statistics" onClick={() => setStatsOpen(true)}>
             <BarChart3Icon />
           </Button>
-          <Button size="icon-lg" variant="ghost" className="hidden sm:inline-flex" aria-label="Toggle theme" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
-            <SunIcon className="hidden dark:block" />
-            <MoonIcon className="dark:hidden" />
-          </Button>
-          <Button size="icon-lg" variant="ghost" className="hidden sm:inline-flex" aria-label="About" asChild>
-            <Link href="/about">
-              <InfoIcon />
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon-lg" variant="ghost" aria-label="Menu">
+                <MenuIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-[1100] w-52">
+              <DropdownMenuItem onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+                <SunIcon className="hidden dark:block" />
+                <MoonIcon className="dark:hidden" />
+                <span className="dark:hidden">Dark map</span>
+                <span className="hidden dark:inline">Light map</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/about">
+                  <InfoIcon /> About & safety rules
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/admin">
+                  <ShieldIcon /> Moderator login
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {picking && (
@@ -275,6 +314,29 @@ export function DeathspotApp() {
               Use my location
             </Button>
             <Button size="icon-sm" variant="ghost" className="text-background hover:bg-background/20 hover:text-background" aria-label="Cancel report" onClick={() => setPicking(false)}>
+              <XIcon />
+            </Button>
+          </div>
+        )}
+
+        {routes.length > 0 && !routeOpen && !picking && (
+          <div className="pointer-events-auto mx-auto mt-3 flex w-fit items-center gap-1 rounded-full bg-background/95 py-1 pr-1 pl-3 text-sm shadow-lg">
+            <NavigationIcon className="size-4 text-blue-600" />
+            <button type="button" className="font-medium" onClick={() => setRouteOpen(true)}>
+              {routes[activeRoute]?.dangers.length
+                ? `${routes[activeRoute].dangers.length} danger spot${routes[activeRoute].dangers.length > 1 ? "s" : ""} on route`
+                : "No reported spots on route"}
+            </button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="rounded-full"
+              aria-label="Clear route"
+              onClick={() => {
+                setRoutes([])
+                setActiveRoute(0)
+              }}
+            >
               <XIcon />
             </Button>
           </div>
@@ -311,18 +373,6 @@ export function DeathspotApp() {
       {/* Bottom actions */}
       <div className="absolute inset-x-3 bottom-3 z-10 flex items-end justify-between pb-[env(safe-area-inset-bottom)]">
         <EmergencyButton />
-        {routes.length > 0 && !routeOpen && (
-          <Button
-            variant="secondary"
-            className="h-10 rounded-full bg-background shadow-lg"
-            onClick={() => {
-              setRoutes([])
-              setActiveRoute(0)
-            }}
-          >
-            <XIcon /> Clear route
-          </Button>
-        )}
         <Button onClick={startReport} disabled={picking} className="h-16 rounded-full px-6 text-base font-semibold shadow-xl shadow-primary/30" aria-label="Report a danger spot">
           <PlusIcon className="size-6" />
           <span>Report</span>
@@ -349,6 +399,10 @@ export function DeathspotApp() {
               select(null)
               setRouteOpen(true)
             }}
+            onFlag={() => {
+              setFlagging(selected)
+              select(null)
+            }}
           />
         )}
       </ResponsiveModal>
@@ -366,15 +420,17 @@ export function DeathspotApp() {
         {pickedPoint && (
           <ReportForm
             point={pickedPoint}
+            requireApproval={requireApproval}
             onRepick={() => {
               setReportOpen(false)
               setPicking(true)
             }}
-            onCreated={(spot) => {
-              upsert(spot)
-              setMyVotes((v) => ({ ...v, [spot.id]: 1 }))
+            onCreated={(spot, pending) => {
               setReportOpen(false)
               setPickedPoint(null)
+              if (pending) return
+              upsert(spot)
+              setMyVotes((v) => ({ ...v, [spot.id]: 1 }))
               setStatsKey((k) => k + 1)
               select(spot, true)
             }}
@@ -404,6 +460,24 @@ export function DeathspotApp() {
           }}
           onShowMap={() => setRouteOpen(false)}
         />
+      </ResponsiveModal>
+
+      {/* Flag */}
+      <ResponsiveModal
+        open={!!flagging}
+        onOpenChange={(o) => !o && setFlagging(null)}
+        title="Report a problem"
+        description={flagging ? `What's wrong with “${flagging.title}”?` : undefined}
+      >
+        {flagging && (
+          <FlagForm
+            spotId={flagging.id}
+            onDone={(hidden) => {
+              if (hidden) setSpots((all) => all.filter((s) => s.id !== flagging.id))
+              setFlagging(null)
+            }}
+          />
+        )}
       </ResponsiveModal>
 
       {/* Stats */}

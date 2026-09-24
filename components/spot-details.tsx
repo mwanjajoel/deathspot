@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, ClockIcon, ExternalLinkIcon, MapPinIcon, NavigationIcon, Share2Icon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react"
+import { BadgeCheckIcon, CheckIcon, ClockIcon, ExternalLinkIcon, FlagIcon, MapPinIcon, NavigationIcon, Share2Icon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ type Props = {
   onVote: (value: 1 | -1) => void
   voting: boolean
   onCheckRoute: () => void
+  onFlag: () => void
 }
 
 export function StatusBadge({ status }: { status: Spot["status"] }) {
@@ -38,7 +39,7 @@ export function SeverityMeter({ severity }: { severity: number }) {
   )
 }
 
-export function SpotDetails({ spot, myVote, me, onVote, voting, onCheckRoute }: Props) {
+export function SpotDetails({ spot, myVote, me, onVote, voting, onCheckRoute, onFlag }: Props) {
   const cat = CATEGORIES[spot.category]
 
   const share = async () => {
@@ -61,7 +62,13 @@ export function SpotDetails({ spot, myVote, me, onVote, voting, onCheckRoute }: 
         <Badge variant="outline" style={{ borderColor: cat.color, color: cat.color }}>
           <span aria-hidden>{cat.emoji}</span> {cat.label}
         </Badge>
-        <StatusBadge status={spot.status} />
+        {spot.moderator_verified ? (
+          <Badge className="bg-blue-600 text-white">
+            <BadgeCheckIcon /> Verified by moderators
+          </Badge>
+        ) : (
+          <StatusBadge status={spot.status} />
+        )}
         <Badge variant="outline">
           <ClockIcon /> {TIMES_OF_DAY[spot.time_of_day]}
         </Badge>
@@ -128,6 +135,10 @@ export function SpotDetails({ spot, myVote, me, onVote, voting, onCheckRoute }: 
           <NavigationIcon /> Check my route
         </Button>
       </div>
+
+      <button type="button" onClick={onFlag} className="inline-flex items-center justify-center gap-1.5 self-center py-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+        <FlagIcon className="size-3" /> Report a problem with this spot
+      </button>
     </div>
   )
 }

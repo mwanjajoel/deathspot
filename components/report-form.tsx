@@ -14,13 +14,14 @@ import { cn } from "@/lib/utils"
 
 type Props = {
   point: LatLng
+  requireApproval: boolean
   onRepick: () => void
-  onCreated: (spot: Spot) => void
+  onCreated: (spot: Spot, pending: boolean) => void
 }
 
 const SEVERITY_HINT = ["", "Feels unsafe", "Harassment / threats", "Robbery / snatching", "Violent attack", "Someone was killed"]
 
-export function ReportForm({ point, onRepick, onCreated }: Props) {
+export function ReportForm({ point, requireApproval, onRepick, onCreated }: Props) {
   const [category, setCategory] = useState<Category | "">("")
   const [severity, setSeverity] = useState(3)
   const [time, setTime] = useState<TimeOfDay>("night")
@@ -57,8 +58,12 @@ export function ReportForm({ point, onRepick, onCreated }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Could not save report")
-      toast.success("Thank you. Your report is live and others can now confirm it.")
-      onCreated(data.spot)
+      toast.success(
+        data.pending
+          ? "Thank you. Moderators will review your report before it appears on the map."
+          : "Thank you. Your report is live and others can now confirm it.",
+      )
+      onCreated(data.spot, data.pending)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save report")
     } finally {
@@ -163,6 +168,7 @@ export function ReportForm({ point, onRepick, onCreated }: Props) {
       <div className="flex gap-2 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
         <ShieldAlertIcon className="size-4 shrink-0" />
         <p>
+          {requireApproval && "Reports are checked by moderators before they appear. "}
           Report places, not people. Don&apos;t accuse or name anyone. If a crime just happened, call <strong>999</strong> or <strong>112</strong> first.
         </p>
       </div>

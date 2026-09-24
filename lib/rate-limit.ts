@@ -2,9 +2,16 @@ import { createHash } from "node:crypto"
 
 const SALT = process.env.VOTER_SALT ?? "deathspot-ug-dev-salt"
 
-/** Anonymous, non-reversible id for a visitor: no accounts, and no raw IPs are stored. */
+/**
+ * Anonymous, non-reversible id for a visitor: no accounts, and no raw IPs are stored.
+ *
+ * The client IP comes from X-Forwarded-For. Behind Caddy (the https profile) that header is
+ * overwritten with the real client address; if you expose the app directly, clients can spoof it,
+ * so production deployments should sit behind the bundled proxy (or Cloudflare, see below).
+ */
 export function voterHash(req: Request) {
   const ip =
+    req.headers.get("cf-connecting-ip") ??
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
     "local"

@@ -5,6 +5,7 @@ import L from "leaflet"
 import { Circle, MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from "react-leaflet"
 import { CATEGORIES, severityColor, type Spot } from "@/lib/categories"
 import { KAMPALA_CENTER, UGANDA_BOUNDS, type LatLng } from "@/lib/geo"
+import { TILE_ATTRIBUTION as ATTRIBUTION, TILE_URL } from "@/lib/tiles"
 import type { FlyTarget, RouteResult } from "@/lib/types"
 
 // leaflet.markercluster and leaflet.heat are UMD plugins that patch the global `L`.
@@ -25,11 +26,6 @@ export type DangerMapProps = {
   flyTo: FlyTarget | null
 }
 
-// Override with your own tile provider for heavy traffic (OSM's tile policy asks this of busy sites).
-const TILE_URL = process.env.NEXT_PUBLIC_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-const ATTRIBUTION =
-  process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ||
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
 function spotIcon(spot: Spot, selected: boolean) {
   return L.divIcon({

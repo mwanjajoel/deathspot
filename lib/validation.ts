@@ -27,3 +27,8 @@ export const newSpotSchema = z
 export type NewSpot = z.infer<typeof newSpotSchema>
 
 export const voteSchema = z.object({ value: z.union([z.literal(1), z.literal(-1)]) })
+
+export const flagSchema = z.object({
+  reason: z.enum(["inaccurate", "names_person", "duplicate", "abusive", "resolved", "other"]),
+  note: z.string().max(300).default("").transform(clean),
+})

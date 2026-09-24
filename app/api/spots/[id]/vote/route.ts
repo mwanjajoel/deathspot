@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const parsed = voteSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return Response.json({ error: "Vote must be 1 or -1" }, { status: 400 })
 
-  const result = vote(id, hash, parsed.data.value)
+  const result = await vote(id, hash, parsed.data.value)
   if (!result.ok) {
     return result.reason === "not_found"
       ? Response.json({ error: "Spot not found" }, { status: 404 })

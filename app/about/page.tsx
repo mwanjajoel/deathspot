@@ -81,6 +81,10 @@ export default function AboutPage() {
             </li>
             <li>Only report what you saw or what was credibly reported. Add a news or police link when you can.</li>
             <li>Reports are community submitted and may be wrong. Use them as a warning, not as proof.</li>
+            <li>
+              Volunteer moderators review new and flagged reports, remove anything that breaks these rules, and can mark spots <strong>verified</strong>. Use{" "}
+              <em>Report a problem</em> on any spot to alert them.
+            </li>
             <li>This map doesn&apos;t replace the police. Always report crimes to them as well.</li>
           </ul>
         </CardContent>
@@ -113,7 +117,11 @@ export default function AboutPage() {
       </ul>
 
       <p className="mt-10 text-xs text-muted-foreground">
-        Map data © OpenStreetMap contributors, tiles © CARTO. Place search by Nominatim, routing by OSRM.
+        Map data © OpenStreetMap contributors. Place search by Nominatim, routing by OSRM. Moderators can{" "}
+        <Link href="/admin" className="underline">
+          sign in here
+        </Link>
+        .
       </p>
     </main>
   )

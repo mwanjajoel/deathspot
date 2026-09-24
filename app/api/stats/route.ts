@@ -1,5 +1,5 @@
 import { getStats } from "@/lib/db"
 
 export async function GET() {
-  return Response.json(getStats())
+  return Response.json(await getStats(), { headers: { "Cache-Control": "no-store" } })
 }

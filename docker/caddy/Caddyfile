@@ -1,0 +1,15 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Public app
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
+
+# Supabase API gateway + Studio dashboard (basic auth: DASHBOARD_USERNAME / DASHBOARD_PASSWORD).
+{$SUPABASE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api-gw:8000
+}
