@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
-import { requireAdmin, requireModerator, type Moderator, type Role } from "@/lib/admin"
+import { requireAdmin, requireModerator, type LogEntry, type Moderator, type Role } from "@/lib/admin"
 import { CATEGORY_KEYS, TIMES_OF_DAY } from "@/lib/categories"
 import { inUganda } from "@/lib/geo"
 import { serviceClient, userClient } from "@/lib/supabase/server"
@@ -108,6 +108,19 @@ export async function deleteSpot(id: number, note?: string): Promise<ActionResul
   const supabase = await userClient()
   const { error } = await supabase.rpc("admin_delete_spot", { p_spot: id, p_note: note ?? null })
   return error ? failed(error.message) : done("Spot deleted")
+}
+
+export async function getSpotHistory(id: number): Promise<LogEntry[]> {
+  await requireModerator()
+  const supabase = await userClient()
+  const { data, error } = await supabase
+    .from("moderation_log")
+    .select("id, spot_id, spot_title, actor_email, action, note, created_at")
+    .eq("spot_id", id)
+    .order("created_at", { ascending: false })
+    .limit(20)
+  if (error) throw new Error(error.message)
+  return data as LogEntry[]
 }
 
 // ---------------------------------------------------------------- settings (admins)
