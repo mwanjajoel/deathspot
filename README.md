@@ -6,11 +6,13 @@
 
 Think *Waze*, but for danger.
 
-[Why](#why-deathspot) · [Inspiration](#the-inspiration) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Contribute](#how-you-can-contribute) · [Tech stack](#tech-stack) · [Roadmap](#roadmap) · [Run it](#getting-started)
+[Why](#why-deathspot) · [Inspiration](#the-inspiration) · [How it works](#how-it-works) · [Contribute](#how-you-can-contribute) · [Tech stack](#tech-stack) · [Roadmap](#roadmap) · [Run it](#getting-started)
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg) ![Next.js 16](https://img.shields.io/badge/Next.js-16-black) ![Supabase](https://img.shields.io/badge/Supabase-self--hosted-3ECF8E) ![shadcn/ui](https://img.shields.io/badge/UI-shadcn%2Fui-111)
 
-<img src="docs/screenshots/map-desktop.jpg" alt="Deathspot UG map of Kampala with danger pins coloured by severity" width="100%">
+<img src="docs/screenshots/deathspot.jpg" alt="Deathspot UG: map of central Kampala with the Mukwano Road danger spot open, showing its severity, source and community confirmation" width="100%">
+
+<sub>The Mukwano Road spot near CID Headquarters, from the running app.</sub>
 
 </div>
 
@@ -39,32 +41,6 @@ In September 2026, **Moses Matovu was killed less than two minutes from CID Head
 He ended with *"People will add more spots."*
 
 Deathspot UG is built so that people **can** add more spots, in a structured, moderated and privacy-respecting way that the whole country can use. Every spot from that post is on the map, alongside hotspots named in police statements, each linked to its source.
-
-## Screenshots
-
-<table>
-  <tr>
-    <td width="68%"><img src="docs/screenshots/spot-desktop.jpg" alt="A danger spot on Mukwano Road with its details, community votes and actions"></td>
-    <td width="32%"><img src="docs/screenshots/map-mobile.jpg" alt="The map on a phone with the Report and SOS buttons"></td>
-  </tr>
-  <tr>
-    <td><b>Spot details on desktop</b>: severity, source, community confirmation, share and route check.</td>
-    <td><b>Mobile map</b>: thumb-reachable Report, SOS and map controls.</td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td width="33%"><img src="docs/screenshots/spot-mobile.jpg" alt="Spot details in a bottom drawer on a phone"></td>
-    <td width="33%"><img src="docs/screenshots/admin-login-mobile.jpg" alt="Moderator sign-in page on a phone"></td>
-    <td width="34%"></td>
-  </tr>
-  <tr>
-    <td><b>Spot details on a phone</b>: confirm, deny, warn others.</td>
-    <td><b>Moderator sign-in</b> for the admin panel.</td>
-    <td></td>
-  </tr>
-</table>
 
 ## How it works
 
