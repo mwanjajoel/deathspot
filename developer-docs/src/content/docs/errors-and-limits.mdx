@@ -1,0 +1,79 @@
+---
+title: Errors and limits
+description: Error format, status codes, rate limits and validation rules.
+sidebar:
+  order: 3
+---
+
+## Error format
+
+Every error response is JSON with a human-readable `error` message that's safe to show to users:
+
+```json
+{ "error": "You already voted this way on this spot" }
+```
+
+Validation failures on `POST /api/spots` also include `issues`, in
+[zod's issue format](https://zod.dev/), so you can highlight the field:
+
+```json
+{
+  "error": "Location must be inside Uganda",
+  "issues": [{ "code": "custom", "path": ["lat"], "message": "Location must be inside Uganda" }]
+}
+```
+
+## Status codes
+
+| Code | Meaning | What to do |
+| --- | --- | --- |
+| `200` / `201` | Success | |
+| `400` | Invalid input: bad JSON, a missing field, out-of-range values, or a location outside Uganda | Fix the request. Don't retry unchanged. |
+| `404` | The spot doesn't exist or isn't public (pending or rejected) | Refresh your spot list. |
+| `409` | Already voted this way, or already flagged | Treat it as success in your UI. |
+| `429` | Rate limit reached | Back off. See the limits below. |
+| `502` | An upstream service (OSRM routing or Nominatim search) is unavailable | Retry later with backoff. |
+| `503` | The health check can't reach the database | Check the deployment. |
+
+## Rate limits
+
+Limits apply per visitor (see [Identity](/concepts#identity)) over a sliding window:
+
+| Action | Endpoint | Limit |
+| --- | --- | --- |
+| Report a spot | `POST /api/spots` | 5 per hour |
+| Vote | `POST /api/spots/{id}/vote` | 60 per hour |
+| Flag | `POST /api/spots/{id}/flag` | 20 per hour |
+| Search places | `GET /api/geocode` | 30 per minute |
+
+Reads (`GET /api/spots`, `/api/stats`, `/api/route`, `/api/me`) aren't rate limited by the app,
+but please cache them. The public map refreshes spots every two minutes.
+
+<Aside type="note">
+Limits are kept in each app instance's memory, so they reset when the app restarts, and each
+replica counts separately. Distributed rate limiting is on the
+[roadmap](https://github.com/mwanjajoel/deathspot#roadmap).
+</Aside>
+
+## Validation rules
+
+| Field | Rule |
+| --- | --- |
+| `title` | 3–80 characters |
+| `description`, `area` | Up to 600 and 80 characters. Optional. |
+| `lat`, `lng` | Inside Uganda: lat −1.6 to 4.3, lng 29.5 to 35.1 |
+| `category` | One of `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapping`, `other` |
+| `severity` | Integer 1–5 |
+| `time_of_day` | `day`, `night` or `any` |
+| `incident_date` | `YYYY-MM-DD`, or `null` |
+| `source_url` | An `http(s)` URL up to 300 characters, `""` or `null` |
+| `note` (flags) | Up to 300 characters |
+
+Phone numbers in `title`, `description`, `area` and flag notes are replaced with `[removed]`.
+
+## Behind a proxy
+
+The app reads the client IP from `CF-Connecting-IP`, then `X-Forwarded-For`. The bundled Caddy
+proxy overwrites `X-Forwarded-For`, so production deployments should always sit behind it (or
+Cloudflare). If port 3000 is exposed directly, clients can spoof the header to dodge
+one-vote-per-spot and rate limits.

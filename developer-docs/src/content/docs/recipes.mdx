@@ -1,0 +1,102 @@
+---
+title: Recipes
+description: Practical patterns for route checks, nearby alerts and keeping a map fresh.
+sidebar:
+  order: 4
+---
+
+## Warn before a boda ride
+
+Check a trip before the rider sets off, and surface the spots along the safest route.
+
+```ts
+type LatLng = { lat: number; lng: number }
+
+export async function checkTrip(base: string, from: LatLng, to: LatLng) {
+  const url = new URL("/api/route", base)
+  url.searchParams.set("from", `${from.lat},${from.lng}`)
+  url.searchParams.set("to", `${to.lat},${to.lng}`)
+
+  const res = await fetch(url)
+  if (!res.ok) throw new Error((await res.json()).error)
+  const { routes } = await res.json()
+
+  const safest = routes[0] // routes are sorted safest first
+  return {
+    minutes: Math.round(safest.duration / 60),
+    warnings: safest.dangers.map((d: any) => ({
+      title: d.spot.title,
+      severity: d.spot.severity,
+      kmIntoTrip: +(d.along / 1000).toFixed(1),
+      night: d.spot.time_of_day === "night",
+    })),
+    saferAlternativeExists: routes.length > 1 && routes[0].risk < routes[1].risk,
+  }
+}
+```
+
+## Nearby alerts
+
+The public map warns people within 300 m of a spot. The spot list is small, so fetch it once and
+check distances on the device. The user's location never needs to leave their phone.
+
+```ts
+const R = 6371000
+const rad = (d: number) => (d * Math.PI) / 180
+
+function metres(a: LatLng, b: LatLng) {
+  const h =
+    Math.sin(rad(b.lat - a.lat) / 2) ** 2 +
+    Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(h))
+}
+
+const { spots } = await (await fetch(`${base}/api/spots`)).json()
+const warned = new Set<number>()
+
+navigator.geolocation.watchPosition(({ coords }) => {
+  const me = { lat: coords.latitude, lng: coords.longitude }
+  for (const spot of spots) {
+    if (spot.status === "disputed" || warned.has(spot.id)) continue
+    if (metres(me, spot) <= 300) {
+      warned.add(spot.id)
+      notify(`Danger spot ahead: ${spot.title}`)
+    }
+  }
+})
+```
+
+<Aside type="tip">
+Weight alerts by `time_of_day`: a `night` spot matters more after dark. Weight them by
+freshness too: a spot confirmed yesterday is more urgent than one last confirmed a year ago.
+</Aside>
+
+## Keep a map fresh
+
+Poll `GET /api/spots` every one or two minutes while the page is visible, and refresh when the
+tab becomes visible again. New reports and moderator decisions then show up without a reload.
+
+```ts
+async function refresh() {
+  if (document.visibilityState !== "visible") return
+  const res = await fetch("/api/spots")
+  if (res.ok) render((await res.json()).spots)
+}
+setInterval(refresh, 120_000)
+document.addEventListener("visibilitychange", refresh)
+```
+
+## Show which way the user voted
+
+`GET /api/me` returns the caller's votes as `{ [spotId]: 1 | -1 }`. Use it to disable the button
+they already pressed, since a repeat vote returns `409`.
+
+```ts
+const { votes, requireApproval } = await (await fetch("/api/me")).json()
+const myVote = votes[spot.id] // 1, -1 or undefined
+```
+
+## Share a spot
+
+Every spot has a deep link on the public map: `https://<your-domain>/?spot=<id>`. It opens the
+map centred on the spot with its details showing. It works well in WhatsApp messages.

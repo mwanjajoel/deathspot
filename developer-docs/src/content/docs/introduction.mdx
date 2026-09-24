@@ -1,0 +1,60 @@
+---
+title: Introduction
+description: What the Deathspot UG API is, who it's for, and the principles behind it.
+sidebar:
+  order: 0
+---
+
+Deathspot UG is a community-led danger map of Uganda. It's a *Waze for danger*: people pin
+places where others have been attacked or killed, the community confirms whether each spot
+is still dangerous, and volunteer moderators keep the map honest.
+
+The same HTTP API that powers the public map is open to developers. You can use it to:
+
+- **Read the map**: every approved spot, with severity, category, time of day and sources.
+- **Report spots** from your own app, bot or form.
+- **Confirm or deny** spots so warnings stay current.
+- **Flag problems** for moderators.
+- **Check a route** before a trip and list the danger spots along it.
+
+<CardGrid>
+  <Card title="Quickstart" icon="ph:lightning">
+    Make your first calls with `curl` in five minutes. [Start →](/quickstart)
+  </Card>
+  <Card title="API reference" icon="ph:book-open">
+    Every endpoint, parameter and response, with code samples. [Browse →](/api)
+  </Card>
+  <Card title="Core concepts" icon="ph:graph">
+    Moderation, community status, flags and verification. [Learn →](/concepts)
+  </Card>
+  <Card title="Recipes" icon="ph:code">
+    Route checks, nearby alerts and live maps in your own app. [Build →](/recipes)
+  </Card>
+</CardGrid>
+
+## At a glance
+
+| | |
+| --- | --- |
+| **Base URL** | Your deployment, e.g. `https://deathspot.example.com`. Locally: `http://localhost:3000` |
+| **Format** | JSON requests and responses. Send `Content-Type: application/json` on `POST`. |
+| **Authentication** | None. The public API is anonymous. |
+| **Coverage** | Uganda only: latitude −1.6 to 4.3, longitude 29.5 to 35.1 |
+| **Rate limits** | Per visitor, e.g. 5 reports/hour. See [Errors and limits](/errors-and-limits). |
+| **Spec** | OpenAPI 3.1 in [`developer-docs/src/api/openapi.yaml`](https://github.com/mwanjajoel/deathspot/blob/main/developer-docs/src/api/openapi.yaml) |
+
+## Principles
+
+**Anonymous by design.** There are no public accounts. Visitors are told apart by a salted,
+non-reversible hash of their IP address and user agent. It's used only to allow one vote per
+spot and to enforce rate limits, and it's never exposed through the API.
+
+**Warnings, not evidence.** Reports are community submitted and can be wrong. Show the
+spot's `status` and `moderator_verified` flag, and link to its `source_url`, so people can
+judge for themselves.
+
+<Render file="places-not-people" />
+
+**Not a replacement for the police.** If your app lets people report spots, also point them
+to the emergency lines: **999** or **112**, and the National Emergency Call Centre on
+**0800 199 399**.

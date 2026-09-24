@@ -1,0 +1,66 @@
+---
+title: Contributing to the API
+description: How to add or change an endpoint and keep these docs in sync.
+sidebar:
+  order: 5
+---
+
+The API reference on this site is generated from one OpenAPI file,
+[`developer-docs/src/api/openapi.yaml`](https://github.com/mwanjajoel/deathspot/blob/main/developer-docs/src/api/openapi.yaml).
+**If you change the API, change the spec in the same pull request.**
+
+## Where things live
+
+| Concern | Path |
+| --- | --- |
+| Route handlers | `app/api/**/route.ts` (Next.js App Router) |
+| Input validation | `lib/validation.ts` (zod) |
+| Data access | `lib/db.ts` (supabase-js) |
+| Database schema, RLS and functions | `supabase/migrations/*.sql` |
+| Rate limits and visitor hashing | `lib/rate-limit.ts` |
+| API spec | `developer-docs/src/api/openapi.yaml` |
+| Guides (this site) | `developer-docs/src/content/docs/*.mdx` |
+
+## Adding an endpoint
+
+<Steps>
+
+1. **Validate input** with a zod schema in `lib/validation.ts`. Keep limits in sync with
+   database `check` constraints.
+2. **Write to the database through a Postgres function**, not a direct table write. Public
+   writes use `security definer` functions that only the `service_role` can execute. Add them
+   in a **new** numbered migration; never edit an applied one.
+3. **Rate-limit** anything that writes, keyed on `voterHash(req)`.
+4. **Return errors as `{ "error": string }`** with the right status code (see
+   [Errors and limits](/errors-and-limits)).
+5. **Document it** in `openapi.yaml`: summary, description, parameters, request body, and every
+   response with an example. Reuse `components/schemas` and `components/responses`.
+6. **Preview the docs** and check the generated page and code samples:
+
+   ```sh
+   cd developer-docs
+   pnpm install
+   pnpm dev          # http://localhost:4321/api
+   ```
+
+</Steps>
+
+## Writing guides
+
+Guides are MDX files in `developer-docs/src/content/docs/`. Add the page to `sidebar.items` in
+`developer-docs/nimbus.config.ts`. Components available in MDX are registered in
+`src/components.ts`: `Aside`, `Card`, `CardGrid`, `Steps`, `Tabs`, `TabItem`, `PackageManagers`
+and `Render`.
+
+Before opening a PR:
+
+```sh
+pnpm exec nimbus-docs check   # config, links, MDX components, types
+pnpm build                    # the full site, including the API reference
+```
+
+## Agent-friendly by default
+
+Nimbus publishes a Markdown version of every page (append `index.md` to any URL), plus
+`/llms.txt`, `/api/llms.txt` and `/llms-full.txt`. Coding assistants can read the whole API
+in one request.

@@ -1,0 +1,905 @@
+openapi: 3.1.0
+info:
+  title: Deathspot UG API
+  version: 1.0.0
+  summary: Public API for the community-led danger map of Uganda.
+  description: |
+    The Deathspot UG API powers the public map. Use it to read danger spots, report new ones,
+    confirm or deny existing spots, flag problems for moderators, and check a route for danger
+    spots.
+
+    - **No API key.** The public API is anonymous. Visitors are told apart by a salted,
+      non-reversible hash of their IP address and user agent, which is used only for
+      one-vote-per-spot and rate limits.
+    - **JSON in, JSON out.** Send `Content-Type: application/json` on every `POST`.
+    - **Uganda only.** Coordinates must fall inside Uganda's bounding box
+      (latitude −1.6 to 4.3, longitude 29.5 to 35.1).
+    - **Places, not people.** Reports describe locations. Phone numbers in free text are replaced
+      with `[removed]`, and moderators delete anything that names or accuses a person.
+
+    Moderation (approving, hiding, editing and verifying spots) is not part of the public API.
+    Moderators use the `/admin` panel.
+  license:
+    name: MIT
+    url: https://github.com/mwanjajoel/deathspot/blob/main/LICENSE
+  contact:
+    name: Deathspot UG
+    url: https://github.com/mwanjajoel/deathspot
+servers:
+  - url: http://localhost:3000
+    description: Local development (`pnpm dev`)
+  - url: https://deathspot.example.com
+    description: Your deployment. Replace with your APP_DOMAIN.
+tags:
+  - name: Spots
+    description: Read the map and report new danger spots.
+  - name: Community
+    description: Confirm, deny and flag spots. This is how the community keeps the map accurate.
+  - name: Routing
+    description: Check a journey for reported danger spots.
+  - name: Search
+    description: Find places in Uganda.
+  - name: Insights
+    description: Aggregate statistics and the caller's own state.
+  - name: System
+    description: Operational endpoints.
+
+paths:
+  /api/spots:
+    get:
+      tags: [Spots]
+      operationId: listSpots
+      summary: List danger spots
+      description: |
+        Returns every **approved** spot on the public map, ordered by severity (highest first),
+        then newest. Spots that are pending review or were rejected by moderators are never
+        returned.
+
+        The list is small enough to fetch in full; filter on the client for anything the query
+        parameters don't cover. The public map refreshes it every two minutes.
+      parameters:
+        - name: category
+          in: query
+          description: Only return spots in this category.
+          schema:
+            $ref: "#/components/schemas/Category"
+        - name: since
+          in: query
+          description: Only return spots reported within this many days.
+          schema:
+            type: integer
+            minimum: 1
+            example: 30
+      responses:
+        "200":
+          description: The approved spots.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [spots]
+                properties:
+                  spots:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Spot"
+              example:
+                spots:
+                  - id: 1
+                    title: Mukwano Road (near CID HQ)
+                    description: Moses Matovu was reportedly killed here, less than two minutes from CID Headquarters. Residents are calling for more police patrols on Mukwano Road.
+                    lat: 0.30827
+                    lng: 32.58721
+                    area: Kibuli, Makindye
+                    category: murder
+                    severity: 5
+                    time_of_day: night
+                    incident_date: "2026-09-23"
+                    source_url: https://x.com/TonyNatif/status/2102998432218534245
+                    created_at: "2026-09-24T08:55:51.804Z"
+                    last_confirmed_at: "2026-09-24T09:40:12.119Z"
+                    confirmations: 4
+                    denials: 0
+                    status: confirmed
+                    moderator_verified: false
+                    seeded: true
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Spots]
+      operationId: reportSpot
+      summary: Report a danger spot
+      description: |
+        Adds a new danger spot. The reporter's own report counts as their first
+        "still dangerous" vote, so a new spot starts with `confirmations: 1` and
+        `status: unverified`.
+
+        What happens next depends on the site's moderation setting:
+
+        - **Instant publishing (default):** the spot is live immediately and `pending` is `false`.
+        - **Held for review:** the spot waits for a moderator and `pending` is `true`. It won't
+          appear in `GET /api/spots` until it's approved.
+
+        Rate limit: **5 reports per hour** per visitor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSpot"
+            example:
+              title: Boda gang attacks near the junction
+              description: Riders snatch phones and bags after 9pm. Walk in groups or take another route.
+              lat: 0.34918
+              lng: 32.57195
+              area: Kalerwe market
+              category: boda_gang
+              severity: 4
+              time_of_day: night
+              incident_date: "2026-09-20"
+              source_url: https://www.monitor.co.ug/
+      responses:
+        "201":
+          description: The spot was saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [spot, pending]
+                properties:
+                  spot:
+                    $ref: "#/components/schemas/Spot"
+                  pending:
+                    type: boolean
+                    description: "`true` when the spot is held for moderator review and not yet on the public map."
+              example:
+                pending: false
+                spot:
+                  id: 42
+                  title: Boda gang attacks near the junction
+                  description: Riders snatch phones and bags after 9pm. Walk in groups or take another route.
+                  lat: 0.34918
+                  lng: 32.57195
+                  area: Kalerwe market
+                  category: boda_gang
+                  severity: 4
+                  time_of_day: night
+                  incident_date: "2026-09-20"
+                  source_url: https://www.monitor.co.ug/
+                  created_at: "2026-09-24T10:02:31.551Z"
+                  last_confirmed_at: "2026-09-24T10:02:31.551Z"
+                  confirmations: 1
+                  denials: 0
+                  status: unverified
+                  moderator_verified: false
+                  seeded: false
+        "400":
+          description: The report failed validation, for example because the location is outside Uganda or the title is too short.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              example:
+                error: Location must be inside Uganda
+                issues:
+                  - code: custom
+                    path: [lat]
+                    message: Location must be inside Uganda
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/spots/{id}/vote:
+    post:
+      tags: [Community]
+      operationId: voteOnSpot
+      summary: Confirm or deny a spot
+      description: |
+        Records the caller's answer to "Is this place still dangerous?".
+
+        - `1` means **still dangerous**. It also refreshes `last_confirmed_at`.
+        - `-1` means **not anymore**.
+
+        Each visitor has one vote per spot. Sending the opposite value changes the vote, and
+        sending the same value again returns `409`. After every vote the community `status` is
+        recalculated:
+
+        | Condition | `status` |
+        | --- | --- |
+        | `confirmations − denials ≥ 3` | `confirmed` |
+        | `denials > confirmations + 2` | `disputed` |
+        | otherwise | `unverified` |
+
+        Rate limit: **60 votes per hour** per visitor.
+      parameters:
+        - $ref: "#/components/parameters/SpotId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value:
+                  type: integer
+                  enum: [1, -1]
+                  description: "`1` = still dangerous, `-1` = not anymore."
+            example:
+              value: 1
+      responses:
+        "200":
+          description: The vote was recorded. Returns the updated spot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [spot]
+                properties:
+                  spot:
+                    $ref: "#/components/schemas/Spot"
+        "400":
+          description: The id isn't an integer, or `value` isn't `1` or `-1`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Vote must be 1 or -1
+        "404":
+          description: No approved spot has this id. Pending and rejected spots can't be voted on.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Spot not found
+        "409":
+          description: The caller already voted this way on this spot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: You already voted this way on this spot
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/spots/{id}/flag:
+    post:
+      tags: [Community]
+      operationId: flagSpot
+      summary: Report a problem with a spot
+      description: |
+        Sends a spot to the moderators' review queue with a reason.
+
+        Once a spot collects enough open flags (3 by default; admins can change this), it is
+        **hidden from the public map** until a moderator reviews it, and `result` is `hidden`.
+        Spots verified by moderators are never hidden automatically.
+
+        Each visitor can flag a spot once. Rate limit: **20 flags per hour** per visitor.
+      parameters:
+        - $ref: "#/components/parameters/SpotId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  $ref: "#/components/schemas/FlagReason"
+                note:
+                  type: string
+                  maxLength: 300
+                  description: Optional context for moderators. Phone numbers are removed.
+            example:
+              reason: names_person
+              note: The description names a boda rider.
+      responses:
+        "200":
+          description: The flag was recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [result]
+                properties:
+                  result:
+                    type: string
+                    enum: [flagged, hidden]
+                    description: "`hidden` when this flag pushed the spot over the auto-hide threshold."
+              example:
+                result: flagged
+        "400":
+          description: The id isn't an integer, or `reason` is missing or unknown.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Choose a reason
+        "404":
+          description: No approved spot has this id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Spot not found
+        "409":
+          description: The caller already flagged this spot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: You already reported this spot
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/route:
+    get:
+      tags: [Routing]
+      operationId: checkRoute
+      summary: Check a route for danger spots
+      description: |
+        Plans driving routes between two points (via OSRM, with alternatives) and lists every
+        reported spot within **150 m** of each route. Disputed spots are ignored.
+
+        Routes are sorted **safest first**: by `risk` (the sum of the severities of the spots
+        along the route), then by duration.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Start point as `lat,lng`, inside Uganda.
+          schema:
+            type: string
+            pattern: ^-?\d+(\.\d+)?,-?\d+(\.\d+)?$
+            example: 0.34918,32.57195
+        - name: to
+          in: query
+          required: true
+          description: Destination as `lat,lng`, inside Uganda.
+          schema:
+            type: string
+            pattern: ^-?\d+(\.\d+)?,-?\d+(\.\d+)?$
+            example: 0.36582,32.52923
+      responses:
+        "200":
+          description: One or more routes, safest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [routes, bufferMeters]
+                properties:
+                  routes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Route"
+                  bufferMeters:
+                    type: integer
+                    description: How close to the route a spot must be to count, in metres.
+                    example: 150
+        "400":
+          description: "`from` or `to` is missing, malformed, or outside Uganda."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: from and to must be lat,lng points inside Uganda
+        "404":
+          description: The routing service found no route between the points.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: No route found
+        "502":
+          description: The upstream routing service (OSRM) is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Routing service unavailable
+
+  /api/geocode:
+    get:
+      tags: [Search]
+      operationId: searchPlaces
+      summary: Search for a place
+      description: |
+        Looks up places in Uganda by name through OpenStreetMap Nominatim and returns up to six
+        matches. Queries shorter than two characters return an empty list.
+
+        Rate limit: **30 searches per minute** per visitor. Debounce search-as-you-type input;
+        Nominatim's usage policy allows about one request per second.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Place name, e.g. a neighbourhood, landmark or road.
+          schema:
+            type: string
+            minLength: 2
+            example: Kalerwe
+      responses:
+        "200":
+          description: Matching places.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [places]
+                properties:
+                  places:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Place"
+              example:
+                places:
+                  - name: Kalerwe
+                    detail: Kampala, Central Region, Uganda
+                    lat: 0.3491751
+                    lng: 32.5719532
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "502":
+          description: Nominatim is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Search unavailable
+
+  /api/stats:
+    get:
+      tags: [Insights]
+      operationId: getStats
+      summary: Get map statistics
+      description: Aggregates across approved, non-disputed spots. Used by the public map's insights panel.
+      responses:
+        "200":
+          description: Statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+              example:
+                totals:
+                  total: 21
+                  confirmed: 21
+                  unverified: 0
+                  this_week: 0
+                byCategory:
+                  - category: robbery
+                    count: 16
+                  - category: boda_gang
+                    count: 4
+                  - category: murder
+                    count: 1
+                byArea:
+                  - area: Kira, Wakiso
+                    count: 4
+                    max_severity: 4
+                  - area: Rubaga
+                    count: 3
+                    max_severity: 3
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/me:
+    get:
+      tags: [Insights]
+      operationId: getMe
+      summary: Get the caller's votes and site settings
+      description: |
+        Returns the anonymous caller's existing votes, so a client can show which way they
+        voted, and whether new reports are currently held for review.
+      responses:
+        "200":
+          description: The caller's state.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [votes, requireApproval]
+                properties:
+                  votes:
+                    type: object
+                    description: Map of spot id to the caller's vote (`1` or `-1`).
+                    additionalProperties:
+                      type: integer
+                      enum: [1, -1]
+                  requireApproval:
+                    type: boolean
+                    description: "`true` when new reports wait for moderator approval before appearing."
+              example:
+                votes:
+                  "1": 1
+                  "8": -1
+                requireApproval: false
+
+  /api/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Health check
+      description: Returns `200` when the app can reach the database through Supabase. Docker uses this as the container health check.
+      responses:
+        "200":
+          description: Healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+              example:
+                ok: true
+        "503":
+          description: The database or API gateway is unreachable.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, error]
+                properties:
+                  ok:
+                    type: boolean
+                    const: false
+                  error:
+                    type: string
+              example:
+                ok: false
+                error: fetch failed
+
+components:
+  parameters:
+    SpotId:
+      name: id
+      in: path
+      required: true
+      description: The spot's numeric id.
+      schema:
+        type: integer
+        example: 1
+
+  responses:
+    RateLimited:
+      description: The caller exceeded a rate limit. Try again later.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: You have reported a lot of spots recently. Please try again in an hour.
+    ServerError:
+      description: Unexpected server error, usually because the database is unreachable.
+      content:
+        text/plain:
+          schema:
+            type: string
+
+  schemas:
+    Category:
+      type: string
+      description: |
+        What happens at the spot:
+        `murder` (killing), `mob_action`, `boda_gang`, `robbery` (robbery or snatching),
+        `stabbing` (stabbing or hacking), `kidnapping`, `other`.
+      enum: [murder, mob_action, boda_gang, robbery, stabbing, kidnapping, other]
+
+    TimeOfDay:
+      type: string
+      description: When the spot is dangerous.
+      enum: [day, night, any]
+
+    SpotStatus:
+      type: string
+      description: |
+        The community's verdict from votes. `confirmed` needs at least 3 more confirmations than
+        denials, and `disputed` means denials outnumber confirmations by more than 2.
+      enum: [unverified, confirmed, disputed]
+
+    FlagReason:
+      type: string
+      description: |
+        Why the spot needs a moderator:
+        `inaccurate` (wrong location or details), `names_person` (names or accuses a person),
+        `duplicate`, `abusive` (abusive or fake), `resolved` (no longer dangerous), `other`.
+      enum: [inaccurate, names_person, duplicate, abusive, resolved, other]
+
+    Spot:
+      type: object
+      description: A reported danger spot on the public map.
+      required:
+        - id
+        - title
+        - description
+        - lat
+        - lng
+        - area
+        - category
+        - severity
+        - time_of_day
+        - incident_date
+        - source_url
+        - created_at
+        - last_confirmed_at
+        - confirmations
+        - denials
+        - status
+        - moderator_verified
+        - seeded
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          maxLength: 80
+          example: Mukwano Road (near CID HQ)
+        description:
+          type: string
+          maxLength: 600
+          description: What people should know about the place. It may be empty.
+        lat:
+          type: number
+          format: double
+          minimum: -1.6
+          maximum: 4.3
+          example: 0.30827
+        lng:
+          type: number
+          format: double
+          minimum: 29.5
+          maximum: 35.1
+          example: 32.58721
+        area:
+          type: string
+          maxLength: 80
+          description: Neighbourhood, division or landmark. It may be empty.
+          example: Kibuli, Makindye
+        category:
+          $ref: "#/components/schemas/Category"
+        severity:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 1 = feels unsafe, 2 = harassment or threats, 3 = robbery or snatching, 4 = violent attack, 5 = someone was killed.
+          example: 5
+        time_of_day:
+          $ref: "#/components/schemas/TimeOfDay"
+        incident_date:
+          type: [string, "null"]
+          format: date
+          example: "2026-09-23"
+        source_url:
+          type: [string, "null"]
+          format: uri
+          description: A news, police or court source, if the reporter gave one.
+        created_at:
+          type: string
+          format: date-time
+        last_confirmed_at:
+          type: [string, "null"]
+          format: date-time
+          description: When someone last voted "still dangerous".
+        confirmations:
+          type: integer
+          minimum: 0
+          description: Number of "still dangerous" votes.
+        denials:
+          type: integer
+          minimum: 0
+          description: Number of "not anymore" votes.
+        status:
+          $ref: "#/components/schemas/SpotStatus"
+        moderator_verified:
+          type: boolean
+          description: "`true` when a moderator has checked the spot against a reliable source. Shown as \"Verified by moderators\"."
+        seeded:
+          type: boolean
+          description: "`true` for spots loaded from the project's sourced seed data rather than reported through the app."
+
+    NewSpot:
+      type: object
+      description: A new danger spot report.
+      required: [title, lat, lng, category, severity, time_of_day]
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 80
+          description: Short headline. Phone numbers are replaced with `[removed]`.
+        description:
+          type: string
+          maxLength: 600
+          default: ""
+          description: What happened and when it's dangerous. Describe the place, never a person.
+        lat:
+          type: number
+          format: double
+          minimum: -1.6
+          maximum: 4.3
+        lng:
+          type: number
+          format: double
+          minimum: 29.5
+          maximum: 35.1
+        area:
+          type: string
+          maxLength: 80
+          default: ""
+        category:
+          $ref: "#/components/schemas/Category"
+        severity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        time_of_day:
+          $ref: "#/components/schemas/TimeOfDay"
+        incident_date:
+          type: [string, "null"]
+          format: date
+        source_url:
+          type: [string, "null"]
+          format: uri
+          maxLength: 300
+          description: An `http` or `https` link. Send `""` or `null` for none.
+
+    Place:
+      type: object
+      required: [name, detail, lat, lng]
+      properties:
+        name:
+          type: string
+          example: Kalerwe
+        detail:
+          type: string
+          description: Up to three levels of administrative context.
+          example: Kampala, Central Region, Uganda
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+
+    LatLng:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+
+    RouteDanger:
+      type: object
+      description: A danger spot near a route.
+      required: [spot, distance, along]
+      properties:
+        spot:
+          $ref: "#/components/schemas/Spot"
+        distance:
+          type: number
+          description: Distance from the route, in metres (at most `bufferMeters`).
+          example: 42.7
+        along:
+          type: number
+          description: How far into the trip the spot is, in metres. Dangers are sorted by this.
+          example: 1830.4
+
+    Route:
+      type: object
+      required: [distance, duration, line, dangers, risk]
+      properties:
+        distance:
+          type: number
+          description: Route length in metres.
+          example: 7350.2
+        duration:
+          type: number
+          description: Estimated driving time in seconds.
+          example: 492.8
+        line:
+          type: array
+          description: The route geometry as an ordered list of points.
+          items:
+            $ref: "#/components/schemas/LatLng"
+        dangers:
+          type: array
+          items:
+            $ref: "#/components/schemas/RouteDanger"
+        risk:
+          type: integer
+          description: Sum of the severities of `dangers`. Lower is safer.
+          example: 10
+
+    Stats:
+      type: object
+      required: [totals, byCategory, byArea]
+      properties:
+        totals:
+          type: object
+          required: [total, confirmed, unverified, this_week]
+          properties:
+            total:
+              type: integer
+              description: Approved spots on the map.
+            confirmed:
+              type: integer
+              description: Community-confirmed or moderator-verified spots.
+            unverified:
+              type: integer
+            this_week:
+              type: integer
+              description: Spots reported through the app in the last 7 days (excluding seed data).
+        byCategory:
+          type: array
+          items:
+            type: object
+            required: [category, count]
+            properties:
+              category:
+                $ref: "#/components/schemas/Category"
+              count:
+                type: integer
+        byArea:
+          type: array
+          description: The 8 areas with the most spots.
+          items:
+            type: object
+            required: [area, count, max_severity]
+            properties:
+              area:
+                type: string
+              count:
+                type: integer
+              max_severity:
+                type: integer
+                minimum: 1
+                maximum: 5
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: A human-readable message you can show to users.
+
+    ValidationError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          properties:
+            issues:
+              type: array
+              description: Every validation problem, in zod's issue format.
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  path:
+                    type: array
+                    items:
+                      type: [string, integer]
+                  message:
+                    type: string

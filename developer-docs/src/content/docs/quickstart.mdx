@@ -1,0 +1,143 @@
+---
+title: Quickstart
+description: Run Deathspot UG locally and make your first API calls.
+sidebar:
+  order: 1
+---
+
+This guide runs the whole stack on your machine, the app plus a self-hosted Supabase backend,
+and walks through the core calls. You need **Node 20+**, **pnpm** and **Docker**.
+
+<Steps>
+
+1. **Start the app**
+
+   From the repository root:
+
+   ```sh
+   pnpm install
+   pnpm setup:env      # writes .env with fresh secrets
+   pnpm supabase:up    # Postgres, Auth, PostgREST, gateway, Studio
+   pnpm dev            # http://localhost:3000, migrates and seeds on start
+   ```
+
+   Wait for `[bootstrap] ready` in the dev server output, then check it's healthy:
+
+   ```sh
+   curl http://localhost:3000/api/health
+   # {"ok":true}
+   ```
+
+2. **Read the map**
+
+   List every approved spot. The seed data adds 21 sourced spots around Kampala.
+
+   ```sh
+   curl -s http://localhost:3000/api/spots | jq '.spots[0] | {id, title, severity, status}'
+   ```
+
+   ```json
+   { "id": 8, "title": "Nansana intersection", "severity": 5, "status": "confirmed" }
+   ```
+
+   Filter by category, or by how recently spots were reported:
+
+   ```sh
+   curl -s "http://localhost:3000/api/spots?category=boda_gang&since=30"
+   ```
+
+3. **Report a spot**
+
+   <Tabs syncKey="lang">
+   <TabItem label="curl">
+
+   ```sh
+   curl -s -X POST http://localhost:3000/api/spots \
+     -H "Content-Type: application/json" \
+     -d '{
+       "title": "Phone snatching at the taxi stage",
+       "lat": 0.3125, "lng": 32.5770,
+       "area": "Old Taxi Park",
+       "category": "robbery",
+       "severity": 3,
+       "time_of_day": "any"
+     }'
+   ```
+
+   </TabItem>
+   <TabItem label="TypeScript">
+
+   ```ts
+   const res = await fetch("http://localhost:3000/api/spots", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({
+       title: "Phone snatching at the taxi stage",
+       lat: 0.3125,
+       lng: 32.577,
+       area: "Old Taxi Park",
+       category: "robbery",
+       severity: 3,
+       time_of_day: "any",
+     }),
+   })
+   const { spot, pending } = await res.json()
+   ```
+
+   </TabItem>
+   <TabItem label="Python">
+
+   ```python
+   import requests
+
+   res = requests.post("http://localhost:3000/api/spots", json={
+       "title": "Phone snatching at the taxi stage",
+       "lat": 0.3125, "lng": 32.5770,
+       "area": "Old Taxi Park",
+       "category": "robbery",
+       "severity": 3,
+       "time_of_day": "any",
+   })
+   spot, pending = res.json()["spot"], res.json()["pending"]
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   The response is `201` with the new spot and a `pending` flag. It starts as `unverified`
+   with one confirmation: yours. If `pending` is `true`, the site holds reports for moderator
+   review and the spot isn't public yet.
+
+4. **Confirm it**
+
+   Voting `1` means "still dangerous", and `-1` means "not anymore". Replace `22` with your
+   spot's id.
+
+   ```sh
+   curl -s -X POST http://localhost:3000/api/spots/22/vote \
+     -H "Content-Type: application/json" -d '{"value": 1}'
+   ```
+
+   Voting the same way twice returns `409`, because each visitor gets one vote per spot. Three
+   net confirmations turn a spot `confirmed`. See [Core concepts](/concepts).
+
+5. **Check a route**
+
+   Kalerwe to Nansana:
+
+   ```sh
+   curl -s "http://localhost:3000/api/route?from=0.34918,32.57195&to=0.36582,32.52923" \
+     | jq '.routes[] | {minutes: (.duration/60|round), dangers: [.dangers[].spot.title]}'
+   ```
+
+   ```json
+   { "minutes": 9, "dangers": ["Kalerwe", "Nansana intersection"] }
+   ```
+
+</Steps>
+
+## Next steps
+
+- Browse the full [API reference](/api), with generated curl, TypeScript and Python samples.
+- Read [Errors and limits](/errors-and-limits) before shipping.
+- Use the [Recipes](/recipes) for route checks and nearby alerts in your app.

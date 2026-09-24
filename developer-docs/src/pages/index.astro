@@ -1,0 +1,78 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import { config } from "virtual:nimbus/config";
+import { withBase } from "@cloudflare/nimbus-docs/runtime";
+
+// Prerender explicitly so the homepage stays a static route under
+// `output: "server"` — an adapter alone must add zero on-demand routes.
+export const prerender = true;
+---
+
+<BaseLayout title={config.title} description={config.description}>
+  <div class="flex flex-col min-h-screen">
+    <Header />
+    <main id="main-content" tabindex="-1" class="flex-1 mx-auto max-w-2xl w-full px-6 py-24">
+      <h1
+        class="text-foreground leading-tight"
+        style="font-size: var(--nb-h1-size); font-weight: var(--nb-h1-weight); letter-spacing: var(--nb-h1-tracking);"
+      >
+        {config.title}
+      </h1>
+      <p class="mt-2 text-[1.0625rem] text-muted-foreground leading-relaxed">
+        {config.description}
+      </p>
+
+      <div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <a
+          href={withBase("/introduction", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">Introduction</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">What the API is and its principles</div>
+        </a>
+        <a
+          href={withBase("/quickstart", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">Quickstart</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">Your first calls in 5 minutes</div>
+        </a>
+        <a
+          href={withBase("/api", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">API reference</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">Every endpoint, with code samples</div>
+        </a>
+        <a
+          href={withBase("/concepts", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">Core concepts</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">Moderation, votes, flags</div>
+        </a>
+        <a
+          href={withBase("/errors-and-limits", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">Errors & limits</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">Status codes and rate limits</div>
+        </a>
+        <a
+          href={withBase("/recipes", import.meta.env.BASE_URL)}
+          class="block rounded-lg border border-border p-4 transition-colors hover:border-border-strong no-underline"
+        >
+          <div class="font-medium text-foreground">Recipes</div>
+          <div class="mt-0.5 text-sm text-muted-foreground">Route checks and nearby alerts</div>
+        </a>
+      </div>
+
+      <p class="mt-10 text-sm text-muted-foreground">
+        Deathspot UG is a community-led danger map of Uganda: people pin places where others have been attacked or killed, confirm whether
+        they are still dangerous, and check their routes. The app is open source under the MIT license on
+        <a href="https://github.com/mwanjajoel/deathspot" class="underline">GitHub</a>.
+      </p>
+    </main>
+  </div>
+</BaseLayout>

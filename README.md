@@ -95,8 +95,9 @@ Categories: `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapp
 2. Fork, create a branch (`feat/…`, `fix/…`), and follow [Getting started](#getting-started).
 3. Keep changes focused, match the existing code style, and run `pnpm lint && npx tsc --noEmit && pnpm build` before opening a PR.
 4. **Schema changes** go in a new numbered file in [`supabase/migrations/`](supabase/migrations). Never edit an existing migration. Every table needs row-level security.
-5. **Test on a phone-sized screen.** Most people will use Deathspot on a mid-range Android phone over mobile data.
-6. In the PR, describe what changed and how you tested it. Include screenshots for UI changes.
+5. **API changes** must update the OpenAPI spec in [`developer-docs/src/api/openapi.yaml`](developer-docs/src/api/openapi.yaml) in the same PR. The API reference is generated from it.
+6. **Test on a phone-sized screen.** Most people will use Deathspot on a mid-range Android phone over mobile data.
+7. In the PR, describe what changed and how you tested it. Include screenshots for UI changes.
 
 ### 🌍 Translators
 Luganda, Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso and more. See the roadmap. We'll add an i18n structure you can fill in.
@@ -140,6 +141,7 @@ components/          map, report/route/flag UI, admin components, shadcn/ui
 lib/                 data access (db.ts, admin.ts), Supabase clients, geo, validation
 supabase/migrations  schema, RLS policies and moderation functions
 data/seed.json       sourced starting spots
+developer-docs/      Nimbus developer docs site + OpenAPI spec
 docker/              Supabase gateway + db init config, Caddyfile
 ```
 
@@ -240,15 +242,34 @@ docker compose exec -T db pg_restore -U postgres -d postgres --clean < backup.du
 
 ### API
 
+The public HTTP API is documented in a **developer docs site** built with
+[Nimbus](https://github.com/cloudflare/nimbus) in [`developer-docs/`](developer-docs):
+
+- **Guides**: introduction, quickstart, core concepts, errors and limits, recipes, and contributing.
+- **API reference**: generated from the OpenAPI 3.1 spec in
+  [`developer-docs/src/api/openapi.yaml`](developer-docs/src/api/openapi.yaml), with curl,
+  TypeScript and Python samples for every endpoint.
+- **Agent-friendly**: every page has a Markdown version, plus `/llms.txt` and `/llms-full.txt`.
+
+```bash
+pnpm docs:install
+pnpm docs:dev       # http://localhost:4321  (API reference at /api)
+pnpm docs:build     # static site in developer-docs/dist
+```
+
+The docs site deploys anywhere static files can be served, or to Cloudflare with
+`pnpm --dir developer-docs run deploy`. Set `site` in `developer-docs/nimbus.config.ts` to your
+docs domain first.
+
 | Method | Route | |
 | --- | --- | --- |
 | GET | `/api/spots?category=&since=` | Approved spots |
-| POST | `/api/spots` | Report a spot (validated, must be inside Uganda, 5/hour). Returns `pending: true` when approval is required. |
-| POST | `/api/spots/:id/vote` | `{ "value": 1 \| -1 }` |
-| POST | `/api/spots/:id/flag` | `{ "reason": "inaccurate" \| "names_person" \| "duplicate" \| "abusive" \| "resolved" \| "other", "note"? }` |
+| POST | `/api/spots` | Report a spot |
+| POST | `/api/spots/:id/vote` | Confirm (`1`) or deny (`-1`) |
+| POST | `/api/spots/:id/flag` | Report a problem to moderators |
 | GET | `/api/route?from=lat,lng&to=lat,lng` | Routes with the danger spots along each |
 | GET | `/api/geocode?q=` | Place search (Uganda only) |
-| GET | `/api/stats`, `/api/health` | Insights and health check |
+| GET | `/api/stats`, `/api/me`, `/api/health` | Insights, caller state, health |
 
 ## Privacy
 

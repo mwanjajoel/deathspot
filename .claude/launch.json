@@ -4,8 +4,22 @@
     {
       "name": "deathspot-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "developer-docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "developer-docs",
+        "dev",
+        "--port",
+        "4321"
+      ],
+      "port": 4321
     }
   ]
 }

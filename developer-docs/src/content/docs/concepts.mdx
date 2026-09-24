@@ -1,0 +1,93 @@
+---
+title: Core concepts
+description: How spots move through moderation, how community status is calculated, and what flags and verification mean.
+sidebar:
+  order: 2
+---
+
+Every spot carries two independent verdicts. **Moderation** decides whether it's on the public
+map at all. **Community status** says how much the public trusts it.
+
+## Spots
+
+A spot is an approximate **place** (not an address, and never a person) where people report
+being attacked or killed. It has:
+
+- A **category**: `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapping` or `other`.
+- A **severity** from 1 to 5.
+- A **time of day** when it's dangerous: `day`, `night` or `any`.
+- An optional **source**, such as a news report, police statement or court record.
+
+| Severity | Meaning |
+| --- | --- |
+| 1 | Feels unsafe |
+| 2 | Harassment or threats |
+| 3 | Robbery or snatching |
+| 4 | Violent attack |
+| 5 | Someone was killed |
+
+Spots with `seeded: true` come from the project's sourced seed data
+([`data/seed.json`](https://github.com/mwanjajoel/deathspot/blob/main/data/seed.json)) rather
+than from reports made in the app.
+
+## Moderation
+
+Moderation isn't exposed as a field in the public API. You only ever see approved spots, but
+it controls what `GET /api/spots` returns:
+
+| Moderation state | On the public map? | How it gets there |
+| --- | --- | --- |
+| `approved` | Yes | New reports, when the site publishes instantly (the default). A moderator approves or restores it. |
+| `pending` | No | New reports, when the site holds reports for review. A spot auto-hidden by flags. |
+| `rejected` | No | A moderator hides or rejects it. It can be restored later. |
+
+`POST /api/spots` tells you which case applies: `pending: true` means the report is waiting for
+a moderator. Check `requireApproval` from `GET /api/me` to warn users up front.
+
+Moderators can also **verify** a spot after checking it against a reliable source. Verified
+spots have `moderator_verified: true`. Show them as more trustworthy, for example with a
+"Verified by moderators" badge. They're never auto-hidden by flags.
+
+## Community status
+
+Votes answer one question: *is this place still dangerous?* After every vote, the status is
+recalculated from the totals:
+
+| Condition | `status` |
+| --- | --- |
+| `confirmations − denials ≥ 3` | `confirmed` |
+| `denials > confirmations + 2` | `disputed` |
+| otherwise | `unverified` |
+
+- A new report starts with `confirmations: 1`, the reporter's own vote.
+- `last_confirmed_at` updates on every "still dangerous" vote. Use it to show freshness, e.g.
+  "confirmed 2 days ago".
+- **Disputed spots stay on the map** but are ignored by the route check. Consider dimming them
+  in your UI.
+
+## Flags
+
+Anyone can flag an approved spot with a reason (`inaccurate`, `names_person`, `duplicate`,
+`abusive`, `resolved` or `other`) and an optional note. Flags land in the moderators' review
+queue.
+
+When a spot reaches the **auto-hide threshold** of open flags (3 by default, set by admins),
+it moves to `pending` and disappears from the map until a moderator decides:
+
+- **Keep it**: the flags are dismissed and it returns to the map.
+- **Hide it**: it becomes `rejected`.
+- **Edit it**: fix the location or details, then keep it.
+
+`POST /api/spots/{id}/flag` returns `result: "hidden"` when your flag triggered the auto-hide.
+
+## Identity
+
+The API has no accounts. Each visitor is identified by
+`sha256(VOTER_SALT | client IP | user agent)`, truncated. This hash:
+
+- enforces **one vote and one flag per spot** per visitor,
+- keys the **rate limits**,
+- is **never returned** by the API or readable through the database's public role.
+
+Because it includes the user agent, a server-side integration that proxies many users through
+one IP should expect them to share limits. See [Errors and limits](/errors-and-limits).

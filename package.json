@@ -10,7 +10,10 @@
     "lint": "eslint",
     "setup:env": "node scripts/setup-env.mjs",
     "supabase:up": "docker compose up -d db auth rest meta studio api-gw",
-    "supabase:down": "docker compose down"
+    "supabase:down": "docker compose down",
+    "docs:install": "pnpm --dir developer-docs install",
+    "docs:dev": "pnpm --dir developer-docs dev",
+    "docs:build": "pnpm --dir developer-docs build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

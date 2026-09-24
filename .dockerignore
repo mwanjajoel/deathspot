@@ -8,3 +8,4 @@ data/*.db*
 docker/**/data
 *.log
 .claude
+developer-docs
