@@ -1,13 +1,15 @@
 # Deathspot UG on Coolify (https://coolify.io): the same stack as docker-compose.yml, minus the
 # host port mappings and Caddy. Coolify's Traefik proxy terminates HTTPS and routes to the
 # containers, so nothing here binds a host port.
+# Coolify also doesn't place repository files on the host for bind mounts, so the Postgres init
+# scripts and the Envoy config are built into small images (docker/supabase/**/Dockerfile).
 #
 # In Coolify: New resource > Docker Compose (from this repository), set the compose file to
 # /docker-compose.coolify.yml, then assign domains:
 #   app     https://deathspot.org:3000
 #   api-gw  https://supabase.deathspot.org:8000   (optional: Supabase Studio + auth/rest APIs)
 # and paste the variables from `node scripts/setup-env.mjs --out .env.production`.
-# Generated from docker-compose.yml; keep the two in step.
+# Otherwise identical to docker-compose.yml; keep the two in step.
 
 name: deathspot
 
@@ -40,11 +42,10 @@ services:
       start_period: 30s
 
   db:
-    image: supabase/postgres:17.6.1.136
+    build: ./docker/supabase/db
+    image: deathspot-db:17.6.1.136
     restart: unless-stopped
     volumes:
-      - ./docker/supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
-      - ./docker/supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
       - db-data:/var/lib/postgresql/data
       - db-config:/etc/postgresql-custom
     healthcheck:
@@ -179,7 +180,8 @@ services:
   # Envoy API gateway (upstream default). Serves /auth/v1, /rest/v1 and the Studio dashboard
   # (behind DASHBOARD_USERNAME / DASHBOARD_PASSWORD basic auth).
   api-gw:
-    image: envoyproxy/envoy:v1.39.1
+    build: ./docker/supabase/api/envoy
+    image: deathspot-api-gw:1.39.1
     restart: unless-stopped
     networks:
       default:
@@ -194,11 +196,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    volumes:
-      - ./docker/supabase/api/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
-      - ./docker/supabase/api/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
-      - ./docker/supabase/api/envoy/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
-      - ./docker/supabase/api/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
     environment:
       ANON_KEY: ${ANON_KEY}
       SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
