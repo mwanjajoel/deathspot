@@ -1,0 +1,39 @@
+name: 🛡️ Moderator volunteer
+description: Offer to review reports for an area you know well.
+title: "Moderator volunteer: "
+labels: [moderator volunteer]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Moderators review new and flagged reports and keep the map fair and accurate. **Don't post your phone number or email here**; we'll reach you through GitHub.
+  - type: input
+    id: areas
+    attributes:
+      label: Which areas do you know well?
+      placeholder: e.g. Kawempe, Nansana, Wakiso
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why do you want to moderate?
+    validations:
+      required: true
+  - type: dropdown
+    id: time
+    attributes:
+      label: How much time can you give?
+      options:
+        - A few minutes a day
+        - A few times a week
+        - Weekends
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Ground rules
+      options:
+        - label: I've read the community rules on deathspot.org/about and will enforce them fairly.
+          required: true

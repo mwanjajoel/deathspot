@@ -1,0 +1,27 @@
+name: 💡 Idea or feature request
+description: Suggest something that would make Deathspot more useful.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap board](https://github.com/users/mwanjajoel/projects/6) first: your idea may already be planned, and a comment there helps us prioritise.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Who is it for, and what are they trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help build it?
+      options:
+        - label: I'd like to work on this

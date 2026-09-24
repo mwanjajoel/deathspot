@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🚨 In danger right now? Call 999 or 112
+    url: https://deathspot.org/about
+    about: This project can't respond to emergencies. Police and emergency contacts are on the About page.
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/mwanjajoel/deathspot/security/advisories/new
+    about: Please report vulnerabilities privately, not in a public issue.
+  - name: 📚 API and developer docs
+    url: https://docs.deathspot.org
+    about: Guides and the API reference for building on Deathspot.

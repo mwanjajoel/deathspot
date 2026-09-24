@@ -76,7 +76,7 @@ You don't need to be a developer to help.
 - **Share** the map in your estate, campus, church and WhatsApp groups. More eyes mean better warnings.
 
 ### 🛡️ Moderators
-We need trusted volunteers, ideally spread across Kampala, Wakiso, Mukono and upcountry districts, to review reports every day. Moderators should know their area, be fair, and follow the ground rules. Open an issue titled **"Moderator volunteer"** saying which areas you know.
+We need trusted volunteers, ideally spread across Kampala, Wakiso, Mukono and upcountry districts, to review reports every day. Moderators should know their area, be fair, and follow the ground rules. [Volunteer here](https://github.com/mwanjajoel/deathspot/issues/new?template=moderator_volunteer.yml) and say which areas you know.
 
 ### 📚 Researchers & journalists
 Help us **seed well-sourced data**. Spots in [`data/seed.json`](data/seed.json) are loaded into every new installation. Each entry needs an approximate location, a category, a severity, and a **public source** (a police statement, reputable news, or a court record):
@@ -94,8 +94,10 @@ Help us **seed well-sourced data**. Spots in [`data/seed.json`](data/seed.json) 
 Categories: `murder`, `mob_action`, `boda_gang`, `robbery`, `stabbing`, `kidnapping`, `other`. Severity runs from 1 (feels unsafe) to 5 (someone was killed).
 
 ### 💻 Developers & designers
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the branch workflow. In short:
+
 1. Pick an issue, or something from the [roadmap](#roadmap), and comment that you're on it.
-2. Fork, create a branch (`feat/…`, `fix/…`), and follow [Getting started](#getting-started).
+2. Fork, branch from `develop` (`feat/…`, `fix/…`), and follow [Getting started](#getting-started). Open pull requests into `develop`.
 3. Keep changes focused, match the existing code style, and run `pnpm lint && npx tsc --noEmit && pnpm test:coverage && pnpm build` before opening a PR. Coverage must stay at 100%.
 4. **Schema changes** go in a new numbered file in [`supabase/migrations/`](supabase/migrations). Never edit an existing migration. Every table needs row-level security.
 5. **API changes** must update the OpenAPI spec in [`developer-docs/src/api/openapi.yaml`](developer-docs/src/api/openapi.yaml) in the same PR. The API reference is generated from it.

@@ -1,0 +1,45 @@
+name: 🐛 Bug report
+description: Something on deathspot.org or in the code isn't working.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Don't include names or personal details** of anyone involved in an incident.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open deathspot.org on my phone
+        2. Tap Report
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen?
+      options:
+        - deathspot.org (live site)
+        - docs.deathspot.org
+        - Local development / self-hosted
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: e.g. Tecno Spark 20, Chrome 140, on MTN data
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Crop out anything personal.

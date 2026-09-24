@@ -1,0 +1,39 @@
+name: 📍 Spot correction
+description: A danger spot is in the wrong place, out of date, duplicated, or breaks the rules.
+labels: [spot correction]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This issue is public.** Don't name victims, suspects or witnesses, and don't share phone numbers or exact home addresses.
+
+        For something harmful that should come down quickly, use **Report a problem** on the spot in the app: moderators see it straight away.
+  - type: input
+    id: link
+    attributes:
+      label: Link to the spot
+      description: Open the spot on deathspot.org and copy the address (it ends in `?spot=…`).
+      placeholder: https://deathspot.org/?spot=42
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: What's wrong?
+      options:
+        - Wrong location
+        - No longer dangerous
+        - Duplicate of another spot
+        - Wrong category or severity
+        - Names or accuses a person
+        - Not a real incident
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What should change? Link a public source (news, police statement) if you have one.
+    validations:
+      required: true
