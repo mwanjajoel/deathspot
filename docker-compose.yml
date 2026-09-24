@@ -45,7 +45,7 @@ services:
       start_period: 30s
 
   db:
-    image: supabase/postgres:17.6.1.136
+    image: supabase/postgres:17.6.1.173
     restart: unless-stopped
     ports:
       # Bound to localhost only: for backups, psql and `pnpm dev`. Never expose publicly.
