@@ -152,41 +152,42 @@ docker/              Supabase gateway + db init config, Caddyfile
 
 ## Roadmap
 
-Improvements we plan to make. Contributions are welcome on any of these.
+Improvements we plan to make, tracked on the [Deathspot roadmap board](https://github.com/users/mwanjajoel/projects/6) and as [`roadmap` issues](https://github.com/mwanjajoel/deathspot/issues?q=label%3Aroadmap). Contributions are welcome on any of these: comment on the issue to pick one up.
 
 **Reach & access**
-- [ ] 🌍 **Local languages**: Luganda first, then Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso.
-- [ ] 📱 **Installable PWA with offline mode**: cache the map and danger spots for patchy connections.
-- [ ] 💬 **USSD / SMS & WhatsApp bot**: report and check areas from feature phones (e.g. `*xxx#` → "Is Kalerwe safe tonight?").
-- [ ] 🪶 **Data-light mode**: vector tiles, smaller bundles, and fewer requests for low-end Android phones.
+- [ ] 🌍 **Local languages**: Luganda first, then Swahili, Runyankore-Rukiga, Luo, Lusoga, Ateso. ([#1](https://github.com/mwanjajoel/deathspot/issues/1))
+- [ ] 📱 **Installable PWA with offline mode**: cache the map and danger spots for patchy connections. ([#2](https://github.com/mwanjajoel/deathspot/issues/2))
+- [ ] 💬 **USSD / SMS & WhatsApp bot**: report and check areas from feature phones (e.g. `*xxx#` → "Is Kalerwe safe tonight?"). ([#3](https://github.com/mwanjajoel/deathspot/issues/3))
+- [ ] 🪶 **Data-light mode**: vector tiles, smaller bundles, and fewer requests for low-end Android phones. ([#4](https://github.com/mwanjajoel/deathspot/issues/4))
+- [ ] 🗣️ **Report in plain words**: a small bundled open-source model turns "two guys on a boda snatched my phone near Kalerwe last night" into a pre-filled report to confirm. ([#23](https://github.com/mwanjajoel/deathspot/issues/23))
 
 **Safety features**
-- [ ] 🧭 **True "avoid danger" routing**: route *around* spots (a custom OSRM/Valhalla profile) instead of only flagging them.
-- [ ] 🕒 **Time-aware risk**: weight spots by time of day, so night-only spots matter less at noon.
-- [ ] 📍 **Share my trip**: send a live location link to a trusted contact for a boda or night walk.
-- [ ] 🔔 **Area watch**: subscribe to an estate or route and get push/SMS alerts about new confirmed spots.
-- [ ] ⚡ **Live updates** with Supabase Realtime instead of polling.
+- [ ] 🧭 **True "avoid danger" routing**: route *around* spots (a custom OSRM/Valhalla profile) instead of only flagging them. ([#5](https://github.com/mwanjajoel/deathspot/issues/5))
+- [ ] 🕒 **Time-aware risk**: weight spots by time of day, so night-only spots matter less at noon. ([#6](https://github.com/mwanjajoel/deathspot/issues/6))
+- [ ] 📍 **Share my trip**: send a live location link to a trusted contact for a boda or night walk. ([#7](https://github.com/mwanjajoel/deathspot/issues/7))
+- [ ] 🔔 **Area watch**: subscribe to an estate or route and get push/SMS alerts about new confirmed spots. ([#8](https://github.com/mwanjajoel/deathspot/issues/8))
+- [ ] ⚡ **Live updates** with Supabase Realtime instead of polling. ([#9](https://github.com/mwanjajoel/deathspot/issues/9))
 
 **Trust & data quality**
-- [ ] 🧑‍⚖️ **Moderator reputation & regions**: assign moderators to districts and track review times.
-- [ ] 🤖 **Duplicate & abuse detection**: merge nearby duplicates, and catch names and accusations before publishing.
-- [ ] 📸 **Evidence attachments** (with face/plate blurring) via Supabase Storage.
-- [ ] ⏳ **Decay**: spots with no recent confirmations fade out automatically.
-- [ ] 🔐 Moderator **2FA** and SMTP-based password resets.
+- [ ] 🧑‍⚖️ **Moderator reputation & regions**: assign moderators to districts and track review times. ([#10](https://github.com/mwanjajoel/deathspot/issues/10))
+- [ ] 🤖 **Duplicate & abuse detection**: merge nearby duplicates, and catch names and accusations before publishing. ([#11](https://github.com/mwanjajoel/deathspot/issues/11))
+- [ ] 📸 **Evidence attachments** (with face/plate blurring) via Supabase Storage. ([#12](https://github.com/mwanjajoel/deathspot/issues/12))
+- [ ] ⏳ **Decay**: spots with no recent confirmations fade out automatically. ([#13](https://github.com/mwanjajoel/deathspot/issues/13))
+- [ ] 🔐 Moderator **2FA** and SMTP-based password resets. ([#14](https://github.com/mwanjajoel/deathspot/issues/14))
 
 **Impact & transparency**
-- [ ] 📊 **Public open-data dashboard & API**: trends by district, category and time for journalists, researchers and policymakers.
-- [ ] 🚓 **Patrol request reports**: a monthly, source-linked hotspot summary to share with the police and local leaders.
-- [ ] 🗂️ Import historical data from the UPF Annual Crime Reports.
+- [ ] 📊 **Public open-data dashboard & API**: trends by district, category and time for journalists, researchers and policymakers. ([#15](https://github.com/mwanjajoel/deathspot/issues/15))
+- [ ] 🚓 **Patrol request reports**: a monthly, source-linked hotspot summary to share with the police and local leaders. ([#16](https://github.com/mwanjajoel/deathspot/issues/16))
+- [ ] 🗂️ Import historical data from the UPF Annual Crime Reports. ([#17](https://github.com/mwanjajoel/deathspot/issues/17))
 
 **Engineering**
-- [ ] 🎭 Playwright end-to-end tests of the UI on mobile viewports.
-- [ ] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images.
-- [ ] 🗺️ Self-hosted tiles, geocoding and routing to stay within OSM usage policies at scale.
-- [x] 🛡️ Shared rate limiting in Postgres, with `RateLimit-*` headers.
-- [x] ✅ Unit and integration tests at 100% coverage of server code.
+- [ ] 🎭 Playwright end-to-end tests of the UI on mobile viewports. ([#18](https://github.com/mwanjajoel/deathspot/issues/18))
+- [ ] 🔁 CI with GitHub Actions (lint, typecheck, build, migrations against an ephemeral Postgres) and published Docker images. ([#19](https://github.com/mwanjajoel/deathspot/issues/19))
+- [ ] 🗺️ Self-hosted tiles, geocoding and routing to stay within OSM usage policies at scale. ([#20](https://github.com/mwanjajoel/deathspot/issues/20))
+- [x] 🛡️ Shared rate limiting in Postgres, with `RateLimit-*` headers. ([#21](https://github.com/mwanjajoel/deathspot/issues/21))
+- [x] ✅ Unit and integration tests at 100% coverage of server code. ([#22](https://github.com/mwanjajoel/deathspot/issues/22))
 
-Have an idea? Open an issue.
+Have an idea? [Open an issue](https://github.com/mwanjajoel/deathspot/issues/new).
 
 ## Getting started
 
