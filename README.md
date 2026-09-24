@@ -282,9 +282,17 @@ pnpm docs:dev       # http://localhost:4321  (API reference at /api)
 pnpm docs:build     # static site in developer-docs/dist
 ```
 
-The docs site deploys anywhere static files can be served, or to Cloudflare with
-`pnpm --dir developer-docs run deploy`. It's configured for `https://docs.deathspot.org` (`site` in
-`developer-docs/nimbus.config.ts`); change that if you host the docs elsewhere.
+The live docs at **https://docs.deathspot.org** run as a Cloudflare Worker (`deathspot-docs`) serving
+the static build, with the custom domain set in `developer-docs/wrangler.jsonc`. To redeploy:
+
+```bash
+CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=… pnpm --dir developer-docs run deploy
+```
+
+The deploy typechecks, builds, uploads, and attaches `docs.deathspot.org`. The token needs *Workers
+Scripts: Edit* on the account and *Workers Routes: Edit* on the `deathspot.org` zone. To host the
+docs elsewhere, change `site` in `developer-docs/nimbus.config.ts` and serve `developer-docs/dist`
+from any static host.
 
 | Method | Route | |
 | --- | --- | --- |
