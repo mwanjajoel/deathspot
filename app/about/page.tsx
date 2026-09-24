@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowLeftIcon, HeartHandshakeIcon, MapPinnedIcon, ShieldAlertIcon, SkullIcon, UsersIcon } from "lucide-react"
+import { ArrowLeftIcon, HandCoinsIcon, HeartHandshakeIcon, HeartIcon, MapPinnedIcon, ShieldAlertIcon, SkullIcon, UsersIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -87,6 +87,24 @@ export default function AboutPage() {
             </li>
             <li>This map doesn&apos;t replace the police. Always report crimes to them as well.</li>
           </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8 border-primary/30 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HandCoinsIcon className="size-4 text-primary" /> Support Deathspot
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            Deathspot UG is currently supported by <strong>Kavash Ventures LLC</strong>. For any contributions towards this cause, donations can be made through Stripe.
+          </p>
+          <Button asChild size="sm">
+            <a href="https://stripe.com/@kavashventures" target="_blank" rel="noopener noreferrer">
+              <HeartIcon /> Donate
+            </a>
+          </Button>
         </CardContent>
       </Card>
 

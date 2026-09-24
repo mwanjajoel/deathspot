@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { EmergencyButton } from "@/components/emergency-button"
 import { DEFAULT_FILTERS, FiltersPopover, applyFilters, type Filters } from "@/components/filters"
@@ -273,6 +274,21 @@ export function DeathspotApp() {
               Deathspot<span className="text-primary">UG</span>
             </span>
           </Link>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="icon-sm" variant="ghost" className="shrink-0 text-muted-foreground" aria-label="What is Deathspot UG?">
+                <InfoIcon />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="z-[1100] w-[min(92vw,20rem)] text-sm">
+              <p>
+                <strong>Deathspot UG</strong> is a community map of places in Uganda where people have been attacked or killed, so you can check your route and stay away from danger.
+              </p>
+              <Link href="/about" className="mt-2 inline-block text-primary underline-offset-4 hover:underline">
+                Learn more
+              </Link>
+            </PopoverContent>
+          </Popover>
           <PlaceSearch
             className="static min-w-0 flex-1"
             inputClassName="h-10 border-0 bg-muted/60 shadow-none"
