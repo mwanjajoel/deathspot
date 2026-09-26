@@ -45,7 +45,7 @@ services:
       start_period: 30s
 
   db:
-    image: supabase/postgres:17.6.1.136
+    image: supabase/postgres:17.6.1.173
     restart: unless-stopped
     ports:
       # Bound to localhost only: for backups, psql and `pnpm dev`. Never expose publicly.
@@ -72,7 +72,7 @@ services:
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
 
   auth:
-    image: supabase/gotrue:v2.196.0
+    image: supabase/gotrue:v2.197.0
     restart: unless-stopped
     depends_on:
       db:
@@ -114,7 +114,7 @@ services:
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
 
   rest:
-    image: postgrest/postgrest:v14.17
+    image: postgrest/postgrest:v16.3
     restart: unless-stopped
     depends_on:
       db:
@@ -153,7 +153,7 @@ services:
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
 
   studio:
-    image: supabase/studio:2026.09.07-sha-7996410
+    image: supabase/studio:2026.09.21-sha-512201d
     restart: unless-stopped
     depends_on:
       - meta

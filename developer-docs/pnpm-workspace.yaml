@@ -13,3 +13,7 @@ ignoredBuiltDependencies: # pnpm 10
   - esbuild
   - sharp
   - workerd
+overrides:
+  # @scalar/json-magic (used by the OpenAPI parser) pins undici 7.24.4, which has known
+  # vulnerabilities (fixed in 7.28/7.29). Drop this once Scalar releases a fix.
+  "@scalar/json-magic>undici": 7.29.0

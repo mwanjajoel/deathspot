@@ -43,7 +43,7 @@ services:
 
   db:
     build: ./docker/supabase/db
-    image: deathspot-db:17.6.1.136
+    image: deathspot-db:latest
     restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -65,7 +65,7 @@ services:
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
 
   auth:
-    image: supabase/gotrue:v2.196.0
+    image: supabase/gotrue:v2.197.0
     restart: unless-stopped
     depends_on:
       db:
@@ -107,7 +107,7 @@ services:
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
 
   rest:
-    image: postgrest/postgrest:v14.17
+    image: postgrest/postgrest:v16.3
     restart: unless-stopped
     depends_on:
       db:
@@ -146,7 +146,7 @@ services:
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
 
   studio:
-    image: supabase/studio:2026.09.07-sha-7996410
+    image: supabase/studio:2026.09.21-sha-512201d
     restart: unless-stopped
     depends_on:
       - meta
@@ -181,7 +181,7 @@ services:
   # (behind DASHBOARD_USERNAME / DASHBOARD_PASSWORD basic auth).
   api-gw:
     build: ./docker/supabase/api/envoy
-    image: deathspot-api-gw:1.39.1
+    image: deathspot-api-gw:latest
     restart: unless-stopped
     networks:
       default:

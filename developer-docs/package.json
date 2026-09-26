@@ -21,12 +21,12 @@
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@iconify-json/ph": "^1.2.0",
     "@readme/httpsnippet": "11.4.0",
-    "@scalar/openapi-parser": "0.28.12",
-    "astro": "7.3.1",
+    "@scalar/openapi-parser": "0.29.3",
+    "astro": "7.3.3",
     "astro-og-canvas": "^0.13.0",
-    "canvaskit-wasm": "^0.41.1",
+    "canvaskit-wasm": "^0.42.0",
     "clsx": "^2.1.1",
-    "openapi-sampler": "1.7.4",
+    "openapi-sampler": "1.7.6",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
@@ -34,7 +34,7 @@
     "@tailwindcss/vite": "^4.1.4",
     "pagefind": "^1.5.2",
     "tailwindcss": "^4.1.4",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "wrangler": "^4.95.0"
   }
 }

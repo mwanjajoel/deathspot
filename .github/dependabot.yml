@@ -1,0 +1,97 @@
+# Weekly dependency updates, opened against `develop` like any other pull request. CI must pass,
+# and a maintainer merges; nothing reaches deathspot.org until the next develop -> main release.
+version: 2
+
+updates:
+  # The app (pnpm)
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Kampala
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    ignore:
+      # Types follow the Node version we run (node:24 in the Dockerfile), not the newest Node.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+    groups:
+      app-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Developer docs at docs.deathspot.org (Nimbus / Astro)
+  - package-ecosystem: npm
+    directory: /developer-docs
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Kampala
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: deps(docs)
+    groups:
+      docs-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Actions used by CI
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Kampala
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Base images in the Dockerfiles
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /docker/backup
+      - /docker/supabase/db
+      - /docker/supabase/api/envoy
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Kampala
+    commit-message:
+      prefix: docker
+    ignore:
+      # Node majors are upgraded by hand, to the next LTS (even) release only.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
+      # A new Postgres major needs a dump and restore, so it's upgraded by hand.
+      - dependency-name: supabase/postgres
+        update-types: [version-update:semver-major]
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+
+  # Images in docker-compose.yml and docker-compose.coolify.yml (Supabase services, Caddy)
+  - package-ecosystem: docker-compose
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Kampala
+    commit-message:
+      prefix: docker
+    ignore:
+      - dependency-name: supabase/postgres
+        update-types: [version-update:semver-major]
+      # Built from this repository, not pulled from a registry.
+      - dependency-name: "deathspot-*"
