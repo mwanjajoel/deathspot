@@ -269,6 +269,22 @@ If the server already runs [Coolify](https://coolify.io), use `docker-compose.co
 3. Domains: `app` → `https://deathspot.org:3000`, and optionally `api-gw` → `https://supabase.deathspot.org:8000` for Studio.
 4. Deploy. With Cloudflare in front, set SSL/TLS to **Full (strict)** once Let's Encrypt has issued the certificates.
 
+### Deploy on InstaCloud
+
+deathspot.org runs on [InstaCloud](https://instacloud.com) (eu-central), which runs one container per service with a managed Postgres, so the stack is split up instead of using a compose file:
+
+| Service | What it runs | Notes |
+| --- | --- | --- |
+| `db` (postgres) | Managed Postgres 16 | Prepared once with [`docker/supabase/plain-postgres.sql`](docker/supabase/plain-postgres.sql) (Supabase roles, schemas and grants) |
+| `auth` | `supabase/gotrue` | `GOTRUE_*` settings as in `docker-compose.yml`, connecting as `supabase_auth_admin` |
+| `rest` | `postgrest/postgrest` | `PGRST_DB_SCHEMAS=public`, connecting as `authenticator` |
+| `app` | this repo's `Dockerfile` | `SUPABASE_AUTH_URL` / `SUPABASE_REST_URL` point at `auth` and `rest` (no gateway), `DATABASE_URL` bound from `db` for migrations |
+| `backup` | [`docker/backup`](docker/backup) | Daily encrypted dumps to R2, `DATABASE_URL` bound from `db`, status page on `PORT` |
+
+Order matters on a new database: run `plain-postgres.sql`, deploy `auth` (it creates the auth schema), then `rest` and `app`.
+
+The domain's DNS stays on Cloudflare, which won't proxy one customer's hostname to another's (InstaCloud's edge also runs on Cloudflare). A Worker in [`cloudflare/edge-proxy`](cloudflare/edge-proxy) serves `deathspot.org/*` from the app's InstaCloud address and passes the visitor's IP with a shared `EDGE_PROXY_SECRET`, which the app needs too.
+
 ### Operations
 
 ```bash

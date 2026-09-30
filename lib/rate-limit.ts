@@ -1,5 +1,5 @@
 import "server-only"
-import { createHash } from "node:crypto"
+import { createHash, timingSafeEqual } from "node:crypto"
 import { isCloudflareIp } from "./cloudflare"
 import { serviceClient } from "./supabase/server"
 
@@ -8,13 +8,31 @@ const SALT = process.env.VOTER_SALT ?? "deathspot-ug-dev-salt"
 const sha = (s: string) => createHash("sha256").update(`${SALT}|${s}`).digest("hex").slice(0, 32)
 
 /**
- * The client IP. The reverse proxy in front of the app (Caddy, or Coolify's Traefik) overwrites
+ * The visitor's IP as passed by a proxy we run ourselves: the Cloudflare Worker in front of
+ * InstaCloud (cloudflare/edge-proxy), which InstaCloud's own edge otherwise hides behind
+ * Cloudflare's address. The header only counts with the shared EDGE_PROXY_SECRET, because
+ * anyone can send it.
+ */
+function edgeProxyIp(headers: Headers) {
+  const secret = process.env.EDGE_PROXY_SECRET
+  const sent = headers.get("x-edge-proxy-secret")
+  const ip = headers.get("x-edge-client-ip")?.trim()
+  if (!secret || !sent || !ip) return undefined
+  const a = Buffer.from(sent)
+  const b = Buffer.from(secret)
+  return a.length === b.length && timingSafeEqual(a, b) ? ip : undefined
+}
+
+/**
+ * Otherwise, the client IP. The reverse proxy in front of the app (Caddy, or Coolify's Traefik) overwrites
  * X-Forwarded-For, so its last hop is the peer that connected to the proxy. CF-Connecting-IP is
  * only believed when that peer is Cloudflare: the origin may also be reachable directly, and then
  * anyone could send the header. If the app itself is exposed without a proxy, clients can spoof
  * X-Forwarded-For too, so production deployments should always sit behind one.
  */
 function clientIp(headers: Headers) {
+  const proxied = edgeProxyIp(headers)
+  if (proxied) return proxied
   const hops = (headers.get("x-forwarded-for") ?? "").split(",").map((h) => h.trim()).filter(Boolean)
   const cf = headers.get("cf-connecting-ip")?.trim()
   if (cf && hops.length && isCloudflareIp(hops[hops.length - 1])) return cf

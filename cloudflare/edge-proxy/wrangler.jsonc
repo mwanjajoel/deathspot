@@ -1,0 +1,15 @@
+{
+  // Deploy: pnpm --dir developer-docs exec wrangler deploy --config ../cloudflare/edge-proxy/wrangler.jsonc
+  // Secret:  ... wrangler secret put EDGE_PROXY_SECRET --config ../cloudflare/edge-proxy/wrangler.jsonc
+  // The app needs the same value in EDGE_PROXY_SECRET.
+  "$schema": "../../developer-docs/node_modules/wrangler/config-schema.json",
+  "name": "deathspot-edge-proxy",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "deathspot.org/*", "zone_name": "deathspot.org" }],
+  "vars": {
+    "ORIGIN": "https://prod-main-app-0c1bb6-30yynmy1110.compute.instacloud-edge.com"
+  },
+  "observability": { "enabled": true }
+}

@@ -27,6 +27,21 @@ describe("visitor identity", () => {
     expect(rl.voterHash(new Request("http://x", { headers: headers() }))).toBe(base)
   })
 
+  it("believes the edge proxy's client IP only with the shared secret", () => {
+    vi.stubEnv("EDGE_PROXY_SECRET", "s3cret")
+    const client = rl.visitorHash(headers({ "x-forwarded-for": "3.3.3.3" }))
+    const viaProxy = (h: Record<string, string>) => rl.visitorHash(headers({ "x-forwarded-for": "172.70.1.2", ...h }))
+    expect(viaProxy({ "x-edge-client-ip": " 3.3.3.3 ", "x-edge-proxy-secret": "s3cret" })).toBe(client)
+    const direct = rl.visitorHash(headers({ "x-forwarded-for": "172.70.1.2" }))
+    expect(viaProxy({ "x-edge-client-ip": "3.3.3.3", "x-edge-proxy-secret": "wrong!" })).toBe(direct)
+    expect(viaProxy({ "x-edge-client-ip": "3.3.3.3", "x-edge-proxy-secret": "short" })).toBe(direct)
+    expect(viaProxy({ "x-edge-client-ip": "3.3.3.3" })).toBe(direct)
+    expect(viaProxy({ "x-edge-proxy-secret": "s3cret" })).toBe(direct)
+    vi.stubEnv("EDGE_PROXY_SECRET", "")
+    expect(viaProxy({ "x-edge-client-ip": "3.3.3.3", "x-edge-proxy-secret": "" })).toBe(direct)
+    vi.unstubAllEnvs()
+  })
+
   it("believes CF-Connecting-IP only when the proxy's peer is a Cloudflare edge address", () => {
     const client = rl.visitorHash(headers({ "x-forwarded-for": "3.3.3.3" }))
     expect(rl.visitorHash(headers({ "cf-connecting-ip": "3.3.3.3", "x-forwarded-for": "172.70.1.2" }))).toBe(client)

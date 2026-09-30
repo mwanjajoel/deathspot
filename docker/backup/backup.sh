@@ -10,8 +10,21 @@
 # `docker compose exec backup backup.sh restore <file>`, described in the README.
 set -eu
 
+# A connection URL (e.g. a managed database's bound DATABASE_URL) takes precedence over PG*.
+if [ -n "${DATABASE_URL:-}" ]; then
+  rest=${DATABASE_URL#*://}; creds=${rest%%@*}; hostpart=${rest#*@}; hostport=${hostpart%%/*}; query=${hostpart#*/}
+  PGUSER=${creds%%:*}
+  PGPASSWORD=$(printf '%b' "$(printf '%s' "${creds#*:}" | sed 's/%/\\x/g')")
+  PGHOST=${hostport%%:*}
+  case "$hostport" in *:*) PGPORT=${hostport##*:}; export PGPORT ;; esac
+  PGDATABASE=${query%%\?*}
+  sslmode=$(printf '%s' "$query" | sed -n 's/.*[?&]sslmode=\([a-z-]*\).*/\1/p')
+  [ -z "$sslmode" ] || export PGSSLMODE="$sslmode"
+fi
 : "${PGHOST:=db}" "${PGUSER:=postgres}" "${PGDATABASE:=postgres}"
 export PGHOST PGUSER PGDATABASE PGPASSWORD
+# Restores need a superuser: supabase_admin in the compose stack, the URL's user otherwise.
+if [ -n "${DATABASE_URL:-}" ]; then RESTORE_PGUSER="${RESTORE_PGUSER:-$PGUSER}"; else RESTORE_PGUSER="${RESTORE_PGUSER:-supabase_admin}"; fi
 BACKUP_HOUR="${BACKUP_HOUR:-1}"                     # 01:00 UTC = 04:00 in Kampala
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 BACKUP_PREFIX="${BACKUP_PREFIX:-deathspot/db}"
@@ -25,6 +38,13 @@ export RCLONE_CONFIG_R2_ENDPOINT="${R2_ENDPOINT:-https://${R2_ACCOUNT_ID:-unset}
 DEST="r2:${R2_BUCKET:-unset}/${BACKUP_PREFIX}"
 
 log() { echo "[backup] $(date -u +%FT%TZ) $*"; }
+
+# Platforms that health-check over HTTP (e.g. InstaCloud, which sets PORT) get a status page.
+STATUS_PORT="${BACKUP_STATUS_PORT:-${PORT:-}}"
+status() {
+  [ -n "$STATUS_PORT" ] || return 0
+  mkdir -p /tmp/www && printf 'deathspot backup: %s\n' "$*" > /tmp/www/index.html
+}
 
 configured() {
   [ -n "${R2_ACCOUNT_ID:-}${R2_ENDPOINT:-}" ] && [ -n "${R2_BUCKET:-}" ] && [ -n "${R2_ACCESS_KEY_ID:-}" ] && [ -n "${R2_SECRET_ACCESS_KEY:-}" ]
@@ -44,6 +64,7 @@ backup() {
   rm -f "$tmp"
   rclone delete --min-age "${BACKUP_RETENTION_DAYS}d" "$DEST" || log "pruning failed (needs list + delete permission)"
   date -u +%s > /tmp/last-success
+  status "last backup $name at $(date -u +%FT%TZ)"
   log "uploaded $name ($size) to ${R2_BUCKET}/${BACKUP_PREFIX}; keeping ${BACKUP_RETENTION_DAYS} days"
 }
 
@@ -51,7 +72,7 @@ backup() {
 # migrations run as postgres. Backups made before owners were kept (and any restore as a
 # different user) leave them owned by the restoring superuser, so put them back.
 fix_owners() {
-  PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -v ON_ERROR_STOP=1 -q <<'SQL'
+  PGUSER="$RESTORE_PGUSER" psql -v ON_ERROR_STOP=1 -q <<'SQL'
 do $$
 declare
   s record;
@@ -92,14 +113,15 @@ restore() {
   # and the restoring user as owner. Each schema's migration history is left alone, so a stack
   # that is newer than the backup keeps its newer migrations. Needs the superuser.
   pg_restore -l "$tmp" | grep -v -E 'TABLE DATA (public deathspot_migrations|auth schema_migrations) ' > "$tmp.list"
-  tables=$(PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -Atq -c "select string_agg(format('%I.%I', schemaname, tablename), ', ')
+  tables=$(PGUSER="$RESTORE_PGUSER" psql -Atq -c "select string_agg(format('%I.%I', schemaname, tablename), ', ')
     from pg_tables where schemaname in ('public', 'auth') and tablename not in ('deathspot_migrations', 'schema_migrations')")
   {
     echo "begin;"
     echo "truncate table $tables;"
-    pg_restore --data-only --disable-triggers --schema=public --schema=auth -L "$tmp.list" -f - "$tmp"
+    # transaction_timeout is new in Postgres 17; drop it so older servers accept the script.
+    pg_restore --data-only --disable-triggers --schema=public --schema=auth -L "$tmp.list" -f - "$tmp" | grep -v '^SET transaction_timeout'
     echo "commit;"
-  } | PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -v ON_ERROR_STOP=1 -q -o /dev/null
+  } | PGUSER="$RESTORE_PGUSER" psql -v ON_ERROR_STOP=1 -q -o /dev/null
   rm -f "$tmp" "$tmp.list"
   log "restored $file"
 }
@@ -117,7 +139,12 @@ case "${1:-daemon}" in
   list) rclone lsl "$DEST" ;;
   restore) restore "${2:?usage: backup.sh restore <yyyy/mm/file>}" ;;
   daemon)
+    if [ -n "$STATUS_PORT" ]; then
+      status "starting"
+      httpd -p "$STATUS_PORT" -h /tmp/www
+    fi
     if ! configured; then
+      status "R2 is not configured; backups are off"
       log "R2 is not configured (R2_ACCOUNT_ID, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY); backups are off"
       exec sleep infinity
     fi
