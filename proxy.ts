@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { gatewayOptions } from "@/lib/supabase/gateway"
 
 /**
  * Keeps the moderator session fresh (Supabase access tokens expire hourly) and sends
@@ -9,6 +10,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    ...gatewayOptions(),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {

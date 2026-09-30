@@ -2,6 +2,7 @@ import "server-only"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { gatewayOptions } from "./gateway"
 
 function env(name: string) {
   const v = process.env[name]
@@ -10,23 +11,25 @@ function env(name: string) {
 }
 
 const NO_SESSION = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+const options = () => ({ ...NO_SESSION, ...gatewayOptions() })
 
 const g = globalThis as unknown as { deathspotService?: SupabaseClient; deathspotAnon?: SupabaseClient }
 
 /** Full access; bypasses RLS. Only for server code that has already validated its input. */
 export function serviceClient() {
-  return (g.deathspotService ??= createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), NO_SESSION))
+  return (g.deathspotService ??= createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), options()))
 }
 
 /** Public, RLS-restricted access: sees only approved spots and public columns. */
 export function anonClient() {
-  return (g.deathspotAnon ??= createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), NO_SESSION))
+  return (g.deathspotAnon ??= createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), options()))
 }
 
 /** Acts as the signed-in moderator (session in cookies); RLS and is_moderator() apply. */
 export async function userClient() {
   const cookieStore = await cookies()
   return createServerClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
+    ...gatewayOptions(),
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (toSet) => {

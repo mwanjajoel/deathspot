@@ -44,3 +44,12 @@ next-env.d.ts
 
 # test coverage reports
 /coverage
+
+# InstaCloud and coding-agent state for this machine: project link, sessions, hooks, skills
+.insta/
+.codex/
+.claude/settings.json
+.claude/skills/
+.agents/skills/
+.github/skills/
+skills-lock.json
