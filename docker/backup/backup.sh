@@ -34,7 +34,7 @@ backup() {
   stamp=$(date -u +%Y%m%dT%H%M%SZ)
   name="deathspot-${stamp}.dump"
   tmp="/tmp/${name}"
-  pg_dump --format=custom --no-owner --file="$tmp"
+  pg_dump --format=custom --file="$tmp"
   if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
     openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_ENCRYPTION_KEY -in "$tmp" -out "$tmp.enc"
     rm -f "$tmp"; tmp="$tmp.enc"; name="$name.enc"
@@ -47,6 +47,39 @@ backup() {
   log "uploaded $name ($size) to ${R2_BUCKET}/${BACKUP_PREFIX}; keeping ${BACKUP_RETENTION_DAYS} days"
 }
 
+# Supabase Auth runs its own migrations and must own the auth schema's objects; the app's
+# migrations run as postgres. Backups made before owners were kept (and any restore as a
+# different user) leave them owned by the restoring superuser, so put them back.
+fix_owners() {
+  PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -v ON_ERROR_STOP=1 -q <<'SQL'
+do $$
+declare
+  s record;
+  r record;
+begin
+  for s in select * from (values ('auth', 'supabase_auth_admin'), ('public', 'postgres')) v(nsp, owner) loop
+    for r in
+      select format('alter table %I.%I owner to %I', s.nsp, tablename, s.owner) as q from pg_tables where schemaname = s.nsp
+      union all
+      select format('alter view %I.%I owner to %I', s.nsp, viewname, s.owner) from pg_views where schemaname = s.nsp
+      union all
+      select format('alter sequence %I.%I owner to %I', s.nsp, sequencename, s.owner) from pg_sequences where schemaname = s.nsp
+        and not exists (select 1 from pg_depend d where d.objid = format('%I.%I', s.nsp, sequencename)::regclass and d.deptype in ('a', 'i'))
+      union all
+      select format('alter function %s owner to %I', p.oid::regprocedure, s.owner) from pg_proc p
+        where p.pronamespace = s.nsp::regnamespace and p.prokind in ('f', 'p')
+      union all
+      select format('alter type %I.%I owner to %I', s.nsp, t.typname, s.owner) from pg_type t
+        where t.typnamespace = s.nsp::regnamespace and t.typtype in ('e', 'd')
+    loop
+      execute r.q;
+    end loop;
+  end loop;
+end
+$$;
+SQL
+}
+
 restore() {
   file="$1"; tmp="/tmp/$(basename "$file")"
   rclone copyto "$DEST/$file" "$tmp"
@@ -54,11 +87,20 @@ restore() {
     openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY -in "$tmp" -out "${tmp%.enc}"
     rm -f "$tmp"; tmp="${tmp%.enc}" ;;
   esac
-  # Only the schemas with our data: app tables and moderator accounts. The rest belongs to the
-  # Supabase image and already exists in a fresh stack. Needs the superuser (supabase_admin).
-  PGUSER="${RESTORE_PGUSER:-supabase_admin}" pg_restore --clean --if-exists --no-owner --single-transaction \
-    --schema=public --schema=auth --dbname="$PGDATABASE" "$tmp"
-  rm -f "$tmp"
+  # Data only, into the schema the running stack already has (the app's migrations and Auth's
+  # own). Recreating tables and functions from the dump would pick up Supabase's default grants
+  # and the restoring user as owner. Each schema's migration history is left alone, so a stack
+  # that is newer than the backup keeps its newer migrations. Needs the superuser.
+  pg_restore -l "$tmp" | grep -v -E 'TABLE DATA (public deathspot_migrations|auth schema_migrations) ' > "$tmp.list"
+  tables=$(PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -Atq -c "select string_agg(format('%I.%I', schemaname, tablename), ', ')
+    from pg_tables where schemaname in ('public', 'auth') and tablename not in ('deathspot_migrations', 'schema_migrations')")
+  {
+    echo "begin;"
+    echo "truncate table $tables;"
+    pg_restore --data-only --disable-triggers --schema=public --schema=auth -L "$tmp.list" -f - "$tmp"
+    echo "commit;"
+  } | PGUSER="${RESTORE_PGUSER:-supabase_admin}" psql -v ON_ERROR_STOP=1 -q -o /dev/null
+  rm -f "$tmp" "$tmp.list"
   log "restored $file"
 }
 
@@ -71,6 +113,7 @@ seconds_until_next_run() {
 
 case "${1:-daemon}" in
   once) backup ;;
+  fix-owners) fix_owners && log "owners reset" ;;
   list) rclone lsl "$DEST" ;;
   restore) restore "${2:?usage: backup.sh restore <yyyy/mm/file>}" ;;
   daemon)
@@ -86,5 +129,5 @@ case "${1:-daemon}" in
       sleep "$wait"
       backup || log "backup failed"
     done ;;
-  *) echo "usage: backup.sh daemon|once|list|restore <file>" >&2; exit 64 ;;
+  *) echo "usage: backup.sh daemon|once|list|restore <file>|fix-owners" >&2; exit 64 ;;
 esac

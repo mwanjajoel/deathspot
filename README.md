@@ -292,7 +292,9 @@ docker compose exec backup backup.sh list                    # list backups in R
 docker compose exec backup backup.sh restore 2026/09/deathspot-20260924T010000Z.dump.enc
 ```
 
-A restore replaces the `public` (spots, votes, flags, moderation log) and `auth` (moderator accounts) schemas in one transaction. It works on a running stack or a fresh one, as long as `BACKUP_ENCRYPTION_KEY` matches.
+A restore replaces the **data** in the `public` (spots, votes, flags, moderation log) and `auth` (moderator accounts) schemas in one transaction. Tables, functions, grants and owners stay as the running stack's migrations created them, so start the stack first (on a new server, wait for `[bootstrap] ready`), then restore. It needs the same `BACKUP_ENCRYPTION_KEY`, and the stack's migrations must be at least as new as the backup.
+
+If Auth fails to start with `relation "schema_migrations" already exists` after restoring an older way (for example a manual `pg_restore`), run `docker compose exec backup backup.sh fix-owners` to give the `auth` and `public` objects back to their owners.
 
 ### API
 
