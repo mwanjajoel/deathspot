@@ -224,7 +224,7 @@ services:
   # Optional automatic HTTPS (Let's Encrypt) for a VPS: `docker compose --profile https up -d`.
   # Point APP_DOMAIN (and SUPABASE_DOMAIN for the dashboard) at this server first.
   caddy:
-    image: caddy:2.10-alpine
+    image: caddy:2.11-alpine
     profiles: [https]
     restart: unless-stopped
     depends_on: [app, api-gw]
