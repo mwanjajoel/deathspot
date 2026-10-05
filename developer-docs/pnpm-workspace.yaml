@@ -14,6 +14,9 @@ ignoredBuiltDependencies: # pnpm 10
   - sharp
   - workerd
 overrides:
-  # @scalar/json-magic (used by the OpenAPI parser) pins undici 7.24.4, which has known
-  # vulnerabilities (fixed in 7.28/7.29). Drop this once Scalar releases a fix.
-  "@scalar/json-magic>undici": 7.29.0
+  # Some build tools pin undici 7 below 7.29.1, which has known vulnerabilities: the OpenAPI
+  # parser (@scalar/json-magic pins 7.24.4) and wrangler's miniflare. Lift every copy to a fixed
+  # 7.x; drop this once both release a fix.
+  "undici@>=7.0.0 <7.29.1": ^7.30.0
+  # astro pins http-cache-semantics 4.2.0 (GHSA high severity, fixed in 4.3.0).
+  "http-cache-semantics@<4.3.0": ^4.3.0
