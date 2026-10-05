@@ -146,7 +146,7 @@ services:
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
 
   studio:
-    image: supabase/studio:2026.09.21-sha-512201d
+    image: supabase/studio:2026.09.28-sha-5e59b60
     restart: unless-stopped
     depends_on:
       - meta
