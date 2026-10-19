@@ -187,7 +187,7 @@ services:
   # Envoy API gateway (upstream default). Serves /auth/v1, /rest/v1 and the Studio dashboard
   # (behind DASHBOARD_USERNAME / DASHBOARD_PASSWORD basic auth).
   api-gw:
-    image: envoyproxy/envoy:v1.39.1
+    image: envoyproxy/envoy:v1.40.0
     restart: unless-stopped
     networks:
       default:
